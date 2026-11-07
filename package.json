@@ -18,7 +18,7 @@
     "hooks:agy:uninstall": "node scripts/install-hooks-agy.js --uninstall",
     "check:llm": "node scripts/check-llm.js",
     "test:hooks": "node --test tests/hooks.test.js",
-    "test": "node --test tests",
+    "test": "node --test tests/hooks.test.js tests/lines.test.js",
     "engine:setup": "powershell -ExecutionPolicy Bypass -File engine/setup.ps1",
     "engine:build": "node scripts/build-engine.js",
     "checksums": "node scripts/checksums.js",
