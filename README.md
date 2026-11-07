@@ -12,6 +12,36 @@ A arte da personagem vem da folha de referência em `tools/daenarys-sheet.png`, 
 
 ---
 
+## Baixar e instalar
+
+Baixe o app pronto na página de releases:
+
+**https://github.com/felipe2026raji-hue/daenarys-assistente/releases/latest**
+
+Na seção **Assets** da release:
+
+| Arquivo | Para quê |
+|---|---|
+| `Daenarys-Setup-<versão>.exe` | Instala no PC (atalho na área de trabalho, desinstalador). Recomendado. |
+| `Daenarys-Portable-<versão>.exe` | Roda sem instalar; extrai para uma pasta temporária. |
+| `SHA256SUMS.txt` | Confere a integridade do download. |
+
+1. Baixe o `.exe`.
+2. Execute. Se o Windows mostrar “O Windows protegeu o computador”, clique em **Mais informações → Executar assim mesmo** (o instalador ainda não tem assinatura digital).
+3. Pronto: a Daenarys sobe o motor de voz/notícias sozinha. **Não precisa de Python.**
+
+> **Source code (zip/tar.gz)** é só o código-fonte, não o app. Para usar, baixe os `.exe` em **Assets**.
+
+Para conferir o download:
+
+```powershell
+Get-FileHash .\Daenarys-Setup-0.5.1.exe -Algorithm SHA256
+```
+
+Compare com a linha correspondente do `SHA256SUMS.txt`.
+
+---
+
 ## O que ela faz
 
 | Recurso | Como funciona |

@@ -10,6 +10,38 @@ glitche, commente chaque action, vient te chercher quand elle attend ta permissi
 
 ![Téléportation, image par image](docs/teleport.png)
 
+---
+
+## Télécharger et installer
+
+Télécharge l'application prête sur la page des releases :
+
+**https://github.com/felipe2026raji-hue/daenarys-assistente/releases/latest**
+
+Dans la section **Assets** de la release :
+
+| Fichier | À quoi ça sert |
+|---|---|
+| `Daenarys-Setup-<version>.exe` | Installe sur le PC (raccourci bureau, désinstalleur). Recommandé. |
+| `Daenarys-Portable-<version>.exe` | Sans installation ; s'extrait dans un dossier temporaire. |
+| `SHA256SUMS.txt` | Vérifie l'intégrité du téléchargement. |
+
+1. Télécharge le `.exe`.
+2. Lance-le. Si Windows affiche « Windows a protégé votre ordinateur », clique sur **Informations complémentaires → Exécuter quand même** (l'installeur n'est pas encore signé).
+3. C'est tout : Daenarys démarre seule le moteur voix/infos. **Pas besoin de Python.**
+
+> **Source code (zip/tar.gz)** n'est que le code source, pas l'application. Pour l'utiliser, prends les `.exe` dans **Assets**.
+
+Vérifier le téléchargement :
+
+```powershell
+Get-FileHash .\Daenarys-Setup-0.5.1.exe -Algorithm SHA256
+```
+
+Compare avec `SHA256SUMS.txt`.
+
+---
+
 ## Ce qu'elle fait
 
 - **Quand elle démarre** : elle attrape ton écran. Ses bords grésillent en rouge, sa main gauche s'abat sur le bord,
