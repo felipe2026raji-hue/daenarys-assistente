@@ -19,7 +19,11 @@ VOZ_ESCOLHIDA = ""                       # nome de uma voz do Windows; vazio = a
 
 # ---------- voz: ouvir ----------
 IDIOMA_RECONHECIMENTO = "pt-BR"
-NIVEL_MINIMO_VOZ = 500                   # abaixo disso = silêncio
+# Microfone de entrada: "" escolhe sozinho (ignora Voicemod, Dummy, cabo virtual...),
+# um número usa o dispositivo do sounddevice (veja `python -m sounddevice`),
+# ou um pedaço do nome, por exemplo "High Definition".
+DISPOSITIVO_ENTRADA = ""
+NIVEL_MINIMO_VOZ = 100                  # piso; o motor sobe sozinho se o ambiente for barulhento
 SEGUNDOS_SILENCIO_PARA_PARAR = 1.5       # silêncio que indica que você terminou
 SEGUNDOS_ESPERA_INICIO = 6               # quanto esperar você começar a falar
 SEGUNDOS_MAXIMO_GRAVACAO = 15            # limite de duração da gravação

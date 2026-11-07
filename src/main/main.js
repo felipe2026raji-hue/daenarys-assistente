@@ -1,5 +1,18 @@
 'use strict';
 
+// Sem console (app aberto pelo Explorer, sem terminal), escrever em stdout pode
+// falhar com EPIPE e derrubar o processo principal. Um log nunca deve fechar o app.
+for (const metodo of ['log', 'info', 'warn', 'error', 'debug']) {
+  const original = console[metodo].bind(console);
+  console[metodo] = (...args) => {
+    try {
+      original(...args);
+    } catch {
+      // sem saída padrão: ignora
+    }
+  };
+}
+
 const path = require('node:path');
 const os = require('node:os');
 const fs = require('node:fs');
