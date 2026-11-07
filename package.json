@@ -1,0 +1,86 @@
+{
+  "name": "capri-desktop",
+  "version": "0.5.1",
+  "description": "Daenarys, the desktop assistant, living on your desktop and narrating what Claude Code is doing.",
+  "author": "mochiiwuff",
+  "repository": "github:mochiiwuff/capri-desktop",
+  "main": "src/main/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "demo": "node scripts/demo.js",
+    "hooks:install": "node scripts/install-hooks.js",
+    "hooks:uninstall": "node scripts/install-hooks.js --uninstall",
+    "hooks:codex:install": "node scripts/install-codex-hooks.js",
+    "hooks:codex:uninstall": "node scripts/install-codex-hooks.js --uninstall",
+    "hooks:agy:install": "node scripts/install-hooks-agy.js",
+    "hooks:agy:uninstall": "node scripts/install-hooks-agy.js --uninstall",
+    "check:llm": "node scripts/check-llm.js",
+    "test:hooks": "node --test tests/hooks.test.js",
+    "test": "node --test tests",
+    "engine:setup": "powershell -ExecutionPolicy Bypass -File engine/setup.ps1",
+    "engine:build": "node scripts/build-engine.js",
+    "checksums": "node scripts/checksums.js",
+    "dist": "npm run engine:build && electron-builder --win"
+  },
+  "keywords": [
+    "claude-code",
+    "desktop-pet",
+    "electron",
+    "cyberpunk",
+    "edgerunners"
+  ],
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "electron": "^44.9.3",
+    "electron-builder": "^26.18.0"
+  },
+  "dependencies": {
+    "@fontsource/chakra-petch": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0"
+  },
+  "build": {
+    "appId": "capri.desktop",
+    "productName": "Daenarys",
+    "files": [
+      "src/**",
+      "assets/**",
+      "hooks/**",
+      "scripts/**",
+      "engine/**",
+      "!engine/.venv/**",
+      "!engine/build/**",
+      "!engine/**/__pycache__/**",
+      "!engine/**/*.pyc",
+      "package.json",
+      "LICENSE"
+    ],
+    "asarUnpack": [
+      "hooks/**",
+      "src/main/windows.ps1",
+      "engine/**"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icons/capri.ico"
+    },
+    "portable": {
+      "artifactName": "Daenarys-Portable-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Daenarys",
+      "artifactName": "Daenarys-Setup-${version}.${ext}"
+    }
+  }
+}

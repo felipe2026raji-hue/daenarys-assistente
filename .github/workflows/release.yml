@@ -1,0 +1,103 @@
+name: Build e release
+
+# Tag `v0.5.1` -> build no Windows, checksums e release no GitHub.
+# Também dá para rodar à mão (Actions -> Run workflow): só gera o artifact, sem release.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows (instalador + portátil)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: |
+            engine/requirements.txt
+            engine/requirements-build.txt
+
+      # Electron e NSIS baixam uma vez por versão do lockfile.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
+      - name: Conferir se a tag bate com o package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ("v$version" -ne "${{ github.ref_name }}") {
+            throw "A tag ${{ github.ref_name }} não bate com a versão $version do package.json."
+          }
+
+      - name: Dependências do app
+        run: npm ci
+
+      - name: Testes
+        run: npm test
+
+      - name: Ambiente do motor (voz + notícias)
+        shell: pwsh
+        run: |
+          python -m venv engine/.venv
+          & engine/.venv/Scripts/python.exe -m pip install --upgrade pip
+          & engine/.venv/Scripts/python.exe -m pip install -r engine/requirements.txt -r engine/requirements-build.txt
+
+      - name: Empacotar o motor (PyInstaller)
+        run: npm run engine:build
+
+      # --publish never: quem publica é o passo abaixo, com os arquivos já prontos.
+      # Assinatura opcional: defina os secrets CSC_LINK e CSC_KEY_PASSWORD no repositório.
+      - name: Gerar instalador e portátil
+        run: npx electron-builder --win --publish never
+
+      - name: Checksums SHA-256
+        run: npm run checksums
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daenarys-windows
+          path: |
+            dist/Daenarys-Setup-*.exe
+            dist/Daenarys-Portable-*.exe
+            dist/*.blockmap
+            dist/latest.yml
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Publicar release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/Daenarys-Setup-*.exe
+            dist/Daenarys-Portable-*.exe
+            dist/SHA256SUMS.txt
+          generate_release_notes: true
+          draft: false
+          prerelease: false

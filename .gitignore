@@ -1,0 +1,17 @@
+node_modules/
+dist/
+out/
+*.log
+
+# motor local: ambiente Python (recriado com npm run engine:setup)
+engine/.venv/
+__pycache__/
+*.pyc
+# motor empacotado (npm run engine:build) e sobras do PyInstaller
+engine/dist/
+engine/build/
+.DS_Store
+Thumbs.db
+
+# local debug captures
+captures/
