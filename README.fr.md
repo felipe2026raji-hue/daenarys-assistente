@@ -353,12 +353,13 @@ système. Tu peux en choisir une autre dans son menu.
 
 ### Démarrage rapide (Windows, sans coder)
 
-1. Télécharge **`Capri-Setup-x.y.z.exe`** dans la [dernière release](https://github.com/mochiiwuff/capri-desktop/releases/latest)
+1. Télécharge **`Daenarys-Setup-<version>.exe`** dans la [dernière release](https://github.com/felipe2026raji-hue/daenarys-assistente/releases/latest)
    et lance-le. Il s'installe pour ton utilisateur seulement (pas besoin d'être administrateur), ajoute un raccourci
-   sur le bureau et lance Capri. Pas besoin de Node.js ni de rien d'autre.
+   sur le bureau et lance Daenarys. Pas besoin de Node.js ni de Python. Il existe aussi un
+   **`Daenarys-Portable-<version>.exe`** qui tourne sans installation.
 2. L'installeur n'est pas signé (un certificat de signature, c'est payant), donc Windows SmartScreen peut afficher
    « Windows a protégé votre ordinateur » : clique sur **Informations complémentaires**, puis **Exécuter quand même**.
-3. Capri apparaît et se présente. Clique sur **Me brancher** : ça la connecte à Claude Code.
+3. Daenarys apparaît et se présente. Clique sur **Me brancher** : ça la connecte à Claude Code.
 4. Ferme complètement Claude Code et rouvre-le (il lit ses hooks au début d'une session). Dès que Claude fait quelque
    chose, elle te dit **« Je vois Claude ! »** : c'est comme ça que tu sais que ça marche.
 
