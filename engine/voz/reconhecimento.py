@@ -44,7 +44,7 @@ sr_audio.AudioData.get_flac_data = _flac_sem_console
 _VIRTUAIS = (
     "voicemod", "dummy", "cable", "virtual", "vb-audio", "mapeador",
     "sound mapper", "driver de captura", "stereo mix", "what u hear",
-    "mixagem estéreo", "loopback",
+    "mixagem estéreo", "loopback", "mixed capture",
 )
 
 
@@ -60,17 +60,100 @@ def _virtual(nome):
     return any(palavra in baixo for palavra in _VIRTUAIS)
 
 
-def escolher_dispositivo():
+def listar_microfones():
+    """Nomes das entradas físicas, sem repetir, na ordem do sistema.
+
+    O app mostra esta lista nos ajustes, no menu da bandeja e no chat. O nome é
+    o que fica salvo (o índice muda quando você pluga ou tira um aparelho).
+    Fora ficam os virtuais e o WDM-KS, que não abre em 16 kHz (o formato da escuta).
+    """
+    vistos = set()
+    nomes = []
+    try:
+        for indice, dispositivo in enumerate(sd.query_devices()):
+            if dispositivo["max_input_channels"] <= 0:
+                continue
+            nome = str(dispositivo.get("name", "")).strip()
+            chave = nome.casefold()
+            if not nome or "()" in nome or _virtual(nome) or chave in vistos:
+                continue
+            try:
+                api = str(sd.query_hostapis(dispositivo.get("hostapi"))["name"])
+            except Exception:
+                api = ""
+            if "wdm-ks" in api.lower():
+                continue
+            vistos.add(chave)
+            nomes.append(nome)
+    except Exception as erro:
+        print(f"[microfone] não consegui listar: {erro}", flush=True)
+    return nomes
+
+
+def _abre(indice):
+    """Testa se o dispositivo entrega áudio em 16 kHz (o formato da escuta)."""
+    try:
+        with sd.RawInputStream(
+            device=indice, samplerate=TAXA, channels=1, dtype="int16"
+        ) as fluxo:
+            fluxo.read(int(TAXA * 0.1))
+        return True
+    except Exception:
+        return False
+
+
+def resolver_dispositivo(escolhido):
+    """Índice de um microfone pelo nome (ou número, para configs antigas)."""
+    if escolhido in ("", None):
+        return None
+    if isinstance(escolhido, int):
+        return escolhido
+    texto = str(escolhido).strip()
+    if not texto:
+        return None
+    if texto.isdigit():
+        return int(texto)
+
+    baixo = texto.casefold()
+    exatos = []
+    parecidos = []
+    try:
+        for indice, dispositivo in enumerate(sd.query_devices()):
+            if dispositivo["max_input_channels"] <= 0:
+                continue
+            nome = str(dispositivo.get("name", ""))
+            chave = nome.casefold()
+            if chave == baixo:
+                exatos.append(indice)
+            elif baixo in chave:
+                parecidos.append(indice)
+    except Exception as erro:
+        print(f"[microfone] não consegui procurar {texto!r}: {erro}", flush=True)
+        return None
+
+    candidatos = exatos + parecidos
+    for indice in candidatos:
+        if _abre(indice):
+            return indice
+    # nenhum abriu agora (talvez já esteja em uso): ainda assim tenta o primeiro
+    return candidatos[0] if candidatos else None
+
+
+def escolher_dispositivo(preferido=""):
     """Índice do microfone a usar, ou None para o padrão do Windows.
 
-    Com ``DISPOSITIVO_ENTRADA`` vazio, ignora Voicemod/Dummy/cabo virtual: se o
-    padrão for um deles, testa as entradas físicas por um instante e fica com a
-    que tiver mais sinal. Assim ela não grava silêncio de um microfone virtual.
+    Com um microfone escolhido (ajustes, bandeja ou chat), usa o nome salvo.
+    Sem escolha, ignora Voicemod/Dummy/cabo virtual: se o padrão for um deles,
+    testa as entradas físicas por um instante e fica com a que tiver mais sinal.
+    Assim ela não grava silêncio de um microfone virtual.
     """
-    escolhido = os.environ.get("CAPRI_MIC") or config.DISPOSITIVO_ENTRADA
+    escolhido = preferido or os.environ.get("CAPRI_MIC") or config.DISPOSITIVO_ENTRADA
     if escolhido not in ("", None):
-        print(f"[microfone] escolhido pela config: {escolhido}", flush=True)
-        return escolhido
+        indice = resolver_dispositivo(escolhido)
+        if indice is not None:
+            print(f"[microfone] escolhido por você: {indice} {_nome_do_dispositivo(indice)}", flush=True)
+            return indice
+        print(f"[microfone] não achei {escolhido!r}; escolhendo sozinho", flush=True)
     try:
         padrao = sd.default.device[0]
         print(f"[microfone] padrão do Windows: {padrao} {_nome_do_dispositivo(padrao)}", flush=True)
@@ -136,6 +219,7 @@ class Reconhecedor:
         self.motor.operation_timeout = 15
         self._trava = threading.Lock()
         self._parar = threading.Event()
+        self._preferido = os.environ.get("CAPRI_MIC") or config.DISPOSITIVO_ENTRADA
         self._dispositivo = None
         self._dispositivo_pronto = False
         self.ocupado = False
@@ -144,10 +228,38 @@ class Reconhecedor:
         """Interrompe uma escuta em andamento (para ela não ouvir a própria voz)."""
         self._parar.set()
 
+    def microfones(self):
+        """Nomes dos microfones que o app pode oferecer."""
+        return listar_microfones()
+
+    def escolhido(self):
+        """O microfone em uso agora: {"indice", "nome"}; vazio = padrão do Windows."""
+        if not self._dispositivo_pronto:
+            return {"indice": None, "nome": ""}
+        return {
+            "indice": self._dispositivo,
+            "nome": _nome_do_dispositivo(self._dispositivo) if self._dispositivo is not None else "",
+        }
+
+    def usar(self, preferido):
+        """Troca o microfone sem reiniciar o motor (nome salvo; "" = automático)."""
+        self._preferido = str(preferido or "")
+        self._dispositivo = None
+        self._dispositivo_pronto = False
+        if self._preferido:
+            indice = resolver_dispositivo(self._preferido)
+            if indice is not None:
+                self._dispositivo = indice
+                self._dispositivo_pronto = True
+                print(f"[microfone] usando {indice} {_nome_do_dispositivo(indice)}", flush=True)
+        else:
+            print("[microfone] automático de novo", flush=True)
+        return self.escolhido()
+
     def _entrada(self):
         """Escolhe o microfone uma vez e lembra; None = padrão do Windows."""
         if not self._dispositivo_pronto:
-            self._dispositivo = escolher_dispositivo()
+            self._dispositivo = escolher_dispositivo(self._preferido)
             self._dispositivo_pronto = True
         return self._dispositivo
 

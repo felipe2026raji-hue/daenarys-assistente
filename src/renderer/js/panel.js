@@ -65,7 +65,13 @@ export class Panel {
     this.chatSend = panel.querySelector('.panel__send');
     this.chatClose = panel.querySelector('.panel__close');
     this.chatMic = panel.querySelector('.panel__mic');
+    this.chatMicPick = panel.querySelector('.panel__micpick');
+    this.chatMicLabel = panel.querySelector('.panel__micpick-label');
+    this.chatMicSelect = panel.querySelector('.panel__micpick-select');
     this.note = panel.querySelector('.panel__note');
+    this.chatMicSelect?.addEventListener('change', () => {
+      this.current?.onMicPick?.(this.chatMicSelect.value);
+    });
     this.chatForm.addEventListener('click', (e) => e.stopPropagation());
     this.chatForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -294,6 +300,8 @@ export class Panel {
     this.chatInput.disabled = false;
     this.chatSend.disabled = false;
     this.chatMic.hidden = Boolean(chat.secret) || chat.mic === false;
+    this.chatMicPick.hidden = !chat.micPick || Boolean(chat.secret) || chat.mic === false;
+    if (chat.micPick) this.setMics(chat.micPick);
     this.setListening(false);
     this.chatSend.textContent = chat.send;
     this.chatClose.setAttribute('aria-label', chat.close);
@@ -376,10 +384,29 @@ export class Panel {
     this.line.classList.add('is-glitching');
   }
 
+  // The microphone picker in her chat: the system default plus every input the engine found.
+  setMics({ label, auto, list = [], value = '' } = {}) {
+    if (!this.chatMicPick) return;
+    this.chatMicLabel.textContent = label || '';
+    const options = [['', auto || ''], ...list.map((name) => [name, name])];
+    // a name saved before this list (or a device now unplugged) still shows, not "Automatic"
+    if (value && !options.some(([option]) => option === value)) options.push([value, value]);
+    this.chatMicSelect.replaceChildren(...options.map(([option, name]) => {
+      const item = document.createElement('option');
+      item.value = option;
+      item.textContent = name;
+      return item;
+    }));
+    this.chatMicSelect.value = value || '';
+    const chat = this.current?.chat;
+    this.chatMicPick.hidden = !chat?.micPick || Boolean(chat.secret) || chat.mic === false;
+  }
+
   // While she answers you can't send another (nor start listening over it).
   setChatBusy(busy) {
     this.chatInput.disabled = busy;
     this.chatSend.disabled = busy;
+    if (this.chatMicSelect) this.chatMicSelect.disabled = busy;
     if (this.chatMic) this.chatMic.disabled = busy || this.chatMic.classList.contains('is-listening');
     if (!busy && this.current?.chat) this.chatInput.focus();
   }

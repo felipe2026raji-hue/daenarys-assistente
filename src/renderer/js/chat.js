@@ -329,11 +329,34 @@ export class Chat {
     this.speech = null;    // voz pt-BR (speech.js), ligada em app.js
     this.play = null;      // brincadeiras de fantasia (play.js), ligadas em app.js
     this.waitingWhen = null; // a reminder you asked for without saying when: { text, until }
+    this.mic = '';         // microfone escolhido no chat (nome); vazio = automático
+    this.mics = null;      // o que o motor ofereceu, quando chegar
     host.onChatDelta(({ id, text }) => this.onDelta(id, text));
   }
 
   get t() {
     return this.brain.t.chat;
+  }
+
+  // O seletor de microfone na janela do chat: troca na hora e fica salvo.
+  pickMic(nome) {
+    this.mic = String(nome || '');
+    this.host.setConfig({ mic: this.mic });
+    this.panel.setMics({
+      label: this.brain.t.settings.mic,
+      auto: this.brain.t.settings.micAuto,
+      list: this.mics || [],
+      value: this.mic,
+    });
+  }
+
+  micPick() {
+    return {
+      label: this.brain.t.settings.mic,
+      auto: this.brain.t.settings.micAuto,
+      list: this.mics || [],
+      value: this.mic,
+    };
   }
 
   // `quiet`: abre sem falar a saudação (quando o microfone já vai gravar, para não se ouvir)
@@ -348,7 +371,11 @@ export class Chat {
       await capri.unstow();
     }
     capri.wake();
-    const status = await host.chatStatus();
+    const [status, cfg] = await Promise.all([
+      host.chatStatus(),
+      host.getConfig().catch(() => null),
+    ]);
+    if (cfg) this.mic = cfg.mic || '';
     if (!status.ok && this.onSetup) {
       this.onSetup(status); // nothing to talk with yet: she sets it up with you, with buttons (setup.js)
       return;
@@ -405,9 +432,11 @@ export class Chat {
         close: t.close,
         noteTag: t.noteTag,
         note: status.local ? t.note : t.noteCloud,
+        micPick: this.micPick(),
       },
       onSend: (text) => this.send(text),
       onMic: () => this.speech?.listen(),
+      onMicPick: (nome) => this.pickMic(nome),
       onLeave: () => this.close(),
       hold: null,
       voice: !quiet,
@@ -417,6 +446,12 @@ export class Chat {
       return;
     }
     this.open = true;
+    // a lista de microfones vem do motor; se demorar, o seletor já está lá com o automático
+    host.mics().then((res) => {
+      if (!Array.isArray(res?.microfones)) return;
+      this.mics = res.microfones;
+      if (this.open) this.panel.setMics(this.micPick());
+    }).catch(() => {});
     setTimeout(() => this.panel.chatInput.focus(), 150); // once the overlay has the keyboard
     capri.perform('hop');
     capri.nextMove = capri.nextGaze = performance.now() + STAY_MS;

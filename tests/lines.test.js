@@ -23,6 +23,7 @@ const MENU_KEYS = [
   'name', 'online', 'talk', 'listen', 'news', 'reminders', 'custom', 'settings',
   'quick', 'lookSection', 'brain', 'more', 'sound', 'mute', 'soundsDir',
   'spark', 'voiceFollow', 'voiceOn', 'voiceSpeak', 'voiceAlways', 'newsStart',
+  'mic', 'micAuto', 'micNone',
   'size', 'small', 'medium', 'large', 'theme', 'themeClassic', 'motion',
   'lang', 'auto', 'startup', 'show', 'hide',
 ];
@@ -31,6 +32,7 @@ const MENU_KEYS = [
 const SETTINGS_KEYS = [
   'title', 'hint', 'close',
   'voice', 'voiceOn', 'alwaysListen', 'alwaysListenNote', 'chatFollow', 'chatFollowNote', 'speakReplies',
+  'mic', 'micAuto',
   'company', 'spark', 'sparkNote', 'pcReact', 'pcNote', 'lookAuto', 'lookNote', 'jealous', 'closePages',
   'wander', 'possess', 'newsStart',
   'lookSection', 'size', 'small', 'medium', 'large', 'theme', 'neon', 'classic',

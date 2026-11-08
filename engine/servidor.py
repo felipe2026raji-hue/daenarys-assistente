@@ -4,6 +4,8 @@ Escuta apenas em 127.0.0.1 e exige o token que o Electron passa na inicializaç�
 Endpoints:
     GET  /saude
     GET  /estado
+    GET  /microfones
+    POST /microfone  {"nome": "..."}   (vazio = automático)
     POST /falar      {"texto": "..."}
     POST /parar
     POST /ouvir
@@ -79,6 +81,12 @@ class Handler(BaseHTTPRequestHandler):
                 "falando": SINTETIZADOR.falando(),
                 "ouvindo": RECONHECEDOR.ocupado,
             })
+        if self.path == "/microfones":
+            return self._responder(200, {
+                "ok": True,
+                "microfones": RECONHECEDOR.microfones(),
+                "escolhido": RECONHECEDOR.escolhido(),
+            })
         return self._responder(404, {"ok": False})
 
     def do_POST(self):
@@ -105,6 +113,14 @@ class Handler(BaseHTTPRequestHandler):
             if tipo == "texto":
                 return self._responder(200, {"ok": True, "texto": texto})
             return self._responder(200, {"ok": False, "motivo": tipo, "mensagem": texto})
+
+        if self.path == "/microfone":
+            escolhido = RECONHECEDOR.usar(corpo.get("nome", ""))
+            return self._responder(200, {
+                "ok": True,
+                "escolhido": escolhido,
+                "microfones": RECONHECEDOR.microfones(),
+            })
 
         if self.path == "/falando":
             return self._responder(200, {"ok": True, "falando": SINTETIZADOR.falando()})

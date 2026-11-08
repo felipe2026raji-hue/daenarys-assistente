@@ -30,6 +30,7 @@ export class Settings {
     this.hint = this.el.querySelector('.settings__hint');
     this.visible = false;
     this.cfg = {};
+    this.mics = []; // microfones que o motor ofereceu (open())
     this.controls = new Map();
     this.renderedLang = null;
     this.el.querySelector('.settings__close').addEventListener('click', () => this.close());
@@ -51,6 +52,7 @@ export class Settings {
   async open() {
     this.closeOthers();
     this.cfg = await this.host.getConfig();
+    this.mics = [];
     this.title.textContent = this.t.title;
     this.hint.textContent = this.t.hint;
     this.render();
@@ -64,6 +66,13 @@ export class Settings {
     requestAnimationFrame(() => {
       this.body.scrollTop = 0;
     });
+    // the engine may still be starting: the picker opens with "Automatic" and fills in when it answers
+    this.host.mics().then((res) => {
+      if (!this.visible || !Array.isArray(res?.microfones)) return;
+      if (res.microfones.join('\n') === this.mics.join('\n')) return;
+      this.mics = res.microfones;
+      this.render();
+    }).catch(() => {});
   }
 
   close() {
@@ -115,6 +124,9 @@ export class Settings {
       () => this.cfg.chatFollow !== false, () => this.cfg.voice !== false && this.cfg.alwaysListen !== false);
     this.addSwitch(voice, 'speakReplies', t.speakReplies, null,
       () => this.cfg.speakReplies !== false, () => this.cfg.voice !== false);
+    this.addSelect(voice, 'mic', t.mic,
+      [['', t.micAuto], ...this.mics.map((name) => [name, name])],
+      () => this.cfg.mic || '', () => this.cfg.voice !== false);
 
     // Company: what she does on her own
     const company = section(t.company);
@@ -252,6 +264,41 @@ export class Settings {
     this.controls.set(key, { kind: 'choice', value, buttons });
   }
 
+  // A picker (the microphone): a native select, so it scrolls and reads like the system's own.
+  addSelect(parent, key, label, options, value, enabled = null) {
+    const row = document.createElement('div');
+    row.className = 'settings__row settings__row--select';
+    row.dataset.key = key;
+
+    const text = document.createElement('span');
+    text.className = 'settings__label';
+    text.textContent = label;
+
+    const select = document.createElement('select');
+    select.className = 'settings__select';
+    select.setAttribute('aria-label', label);
+    const list = [...options];
+    const current = value();
+    // a name saved before this list (or a device now unplugged) still shows, not "Automatic"
+    if (current && !list.some(([option]) => option === current)) list.push([current, current]);
+    for (const [option, name] of list) {
+      const item = document.createElement('option');
+      item.value = option;
+      item.textContent = name;
+      select.append(item);
+    }
+    select.addEventListener('change', () => {
+      const next = select.value;
+      this.cfg = { ...this.cfg, [key]: next };
+      this.refresh();
+      this.host.setConfig({ [key]: next });
+    });
+
+    row.append(text, select);
+    parent.append(row);
+    this.controls.set(key, { kind: 'select', value, select, enabled, row });
+  }
+
   footButton(label, run, primary = false) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -273,6 +320,11 @@ export class Settings {
         control.row.classList.toggle('is-off', off);
         control.button.disabled = off;
         control.button.setAttribute('aria-checked', String(Boolean(control.on())));
+      } else if (control.kind === 'select') {
+        const off = Boolean(control.enabled) && !control.enabled();
+        control.row.classList.toggle('is-off', off);
+        control.select.disabled = off;
+        control.select.value = control.value() || '';
       } else {
         for (const [option, button] of control.buttons) {
           button.setAttribute('aria-pressed', String(same(option, control.value())));

@@ -773,8 +773,49 @@ html[data-motion='reduced'] .panel__bar {
 
 .panel__chat {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin: 12px 0 0;
+}
+
+/* the microphone picker above the field: quiet, like a system setting */
+.panel__micpick {
+  display: flex;
+  flex: 1 0 100%;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.panel__micpick-label {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-3);
+}
+
+.panel__micpick-select {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  color: var(--paper-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.panel__micpick-select:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.panel__micpick-select:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* a field with a notch on the left and a line under it, the caret in her accent */
@@ -1170,6 +1211,33 @@ html[data-motion='reduced'] .panel__bar {
 .settings__seg-btn:focus-visible {
   outline: 1px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* the microphone: a full-width picker under its label */
+.settings__row--select {
+  flex-wrap: wrap;
+}
+
+.settings__select {
+  flex: 1 1 100%;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  color: var(--paper-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.settings__select:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.settings__select:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .settings__foot {

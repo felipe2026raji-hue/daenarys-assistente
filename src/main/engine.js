@@ -20,6 +20,8 @@ class Engine {
     this.error = null;
     this.starting = null;
     this.root = null;
+    this.mic = ''; // microfone escolhido (nome); vazio = automático
+    this.mics = []; // último lista de microfones que o motor entregou
   }
 
   // O Python do ambiente do motor, ou o do sistema.
@@ -89,11 +91,14 @@ class Engine {
       let child;
       try {
         const args = ['--port', '0', '--token', this.token];
+        // o motor também escolhe o microfone pelo ambiente; depois ele muda por POST /microfone
+        const env = { ...process.env, CAPRI_MIC: this.mic || '' };
         if (useBundled) {
           child = spawn(bundled, args, {
             cwd: path.dirname(bundled),
             windowsHide: true,
             stdio: ['ignore', 'pipe', 'pipe'],
+            env,
           });
         } else {
           const { command, prefix } = this.python(engineDir);
@@ -101,6 +106,7 @@ class Engine {
             cwd: engineDir,
             windowsHide: true,
             stdio: ['ignore', 'pipe', 'pipe'],
+            env,
           });
         }
       } catch (err) {
@@ -237,6 +243,33 @@ class Engine {
       return await this.request('POST', '/parar-escuta', {}, 3000);
     } catch {
       return { ok: false };
+    }
+  }
+
+  // Os microfones que ela pode usar (o app mostra nos ajustes, na bandeja e no chat).
+  async microphones() {
+    if (!(await this.ensure())) {
+      return { ok: false, error: this.error || 'motor indisponível', microfones: this.mics };
+    }
+    try {
+      const res = await this.request('GET', '/microfones', undefined, 8000);
+      if (Array.isArray(res?.microfones)) this.mics = res.microfones;
+      return res;
+    } catch (err) {
+      return { ok: false, error: err.message, microfones: this.mics };
+    }
+  }
+
+  // Troca o microfone sem reiniciar o motor. Sem motor de pé, fica guardado para o próximo start.
+  async setMic(nome) {
+    this.mic = String(nome || '');
+    if (this.state !== 'ready') return { ok: true, pending: true, nome: this.mic };
+    try {
+      const res = await this.request('POST', '/microfone', { nome: this.mic }, 8000);
+      if (Array.isArray(res?.microfones)) this.mics = res.microfones;
+      return res;
+    } catch (err) {
+      return { ok: false, error: err.message };
     }
   }
 

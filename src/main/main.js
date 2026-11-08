@@ -64,6 +64,8 @@ let chatErrorCode = null; // 'nokey' or 'nourl': what her setup should ask for
 // Ollama's cloud, as last seen: your account ({ name } or { signin }) and the models free with it
 let cloud = { at: 0, account: null, free: [] };
 const chats = new Map(); // id -> AbortController of an answer being streamed
+let micList = [];       // microfones que o motor ofereceu (para o menu da bandeja)
+let micsFetching = null; // uma busca em andamento, para não repetir
 
 const userSoundsDir = () => path.join(app.getPath('userData'), 'sounds');
 
@@ -305,10 +307,26 @@ function updateConfig(patch) {
     fitOverlay(); // the taskbar in her window or not
     windowWatch?.refresh();
   }
+  if ('mic' in patch) engine.setMic(patch.mic); // troca no motor sem reiniciar
   const cfg = rendererConfig();
   overlay?.webContents.send('capri:config', cfg);
   rebuildTray();
   return cfg;
+}
+
+// A lista de microfones vem do motor (pode demorar um pouco): guarda e refaz o menu quando chega.
+function refreshMics() {
+  if (micsFetching) return micsFetching;
+  micsFetching = engine.microphones().then((res) => {
+    const list = Array.isArray(res?.microfones) ? res.microfones : [];
+    const changed = list.join('\n') !== micList.join('\n');
+    micList = list;
+    if (changed) rebuildTray();
+    return list;
+  }).catch(() => micList).finally(() => {
+    micsFetching = null;
+  });
+  return micsFetching;
 }
 
 function rebuildTray() {
@@ -380,6 +398,21 @@ function rebuildTray() {
     })),
     { label: t.watchNone, type: 'radio', checked: !cfg.claude, click: () => updateConfig({ claude: false }) },
   ];
+  const micNames = cfg.mic && !micList.includes(cfg.mic) ? [...micList, cfg.mic] : micList;
+  const micMenu = [
+    { label: t.micAuto, type: 'radio', checked: !cfg.mic, click: () => updateConfig({ mic: '' }) },
+    ...(micNames.length
+      ? [
+        { type: 'separator' },
+        ...micNames.map((name) => ({
+          label: name.slice(0, 60),
+          type: 'radio',
+          checked: cfg.mic === name,
+          click: () => updateConfig({ mic: name }),
+        })),
+      ]
+      : [{ label: t.micNone, enabled: false }]),
+  ];
   const remindersMenu = reminders.length
     ? reminders.map((r) => ({
       label: `${when(r.at)} · ${(r.text || '…').slice(0, 50)}`,
@@ -450,6 +483,7 @@ function rebuildTray() {
           label: t.voiceSpeak, type: 'checkbox', checked: cfg.speakReplies !== false, enabled: cfg.voice !== false,
           click: (item) => updateConfig({ speakReplies: item.checked }),
         },
+        { label: t.mic, submenu: micMenu },
         { type: 'separator' },
         { label: t.spark, type: 'checkbox', checked: cfg.spark !== false, click: (item) => updateConfig({ spark: item.checked }) },
         { label: t.pcReact, type: 'checkbox', checked: cfg.pcReact !== false, click: (item) => updateConfig({ pcReact: item.checked }) },
@@ -720,6 +754,8 @@ function createTray() {
   tray = new Tray(icon);
   tray.setToolTip('Daenarys');
   tray.on('click', () => sendCommand('status'));
+  // um microfone plugado ou tirado aparece no submenu da próxima vez
+  tray.on('right-click', () => refreshMics());
   rebuildTray();
 }
 
@@ -803,6 +839,11 @@ function registerIpc() {
   ipcMain.handle('voice:speaking', () => engine.isSpeaking());
   ipcMain.handle('voice:stop-listening', () => engine.stopListening());
   ipcMain.handle('voice:listen', () => engine.listen());
+  ipcMain.handle('voice:mics', async () => {
+    const res = await engine.microphones();
+    if (Array.isArray(res?.microfones)) micList = res.microfones;
+    return res;
+  });
   ipcMain.handle('news:brief', (_e, opts) => engine.news(opts || {}));
   ipcMain.handle('news:mark', () => updateConfig({ newsLast: Date.now() }));
   // she looks at your screen (look.js): the picture first, then what her AI says about it
@@ -1102,9 +1143,11 @@ function main() {
     createOverlay();
     createTray();
     // voz pt-BR e notícias: o motor Python sobe escondido e responde em 127.0.0.1
+    engine.setMic(config.load().mic);
     engine.start(ROOT).then((status) => {
       if (status.state === 'ready') console.log(`[capri] motor de voz pronto na porta ${status.port}`);
       else console.error(`[capri] motor de voz indisponível: ${status.error}`);
+      refreshMics(); // para o submenu "Microfone" da bandeja
     });
     windowWatch = startWindowWatch({
       overlay,

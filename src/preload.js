@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('host', {
   chatSend: (request) => ipcRenderer.invoke('chat:send', request),
   chatStop: (id) => ipcRenderer.send('chat:stop', id),
   voiceStatus: () => ipcRenderer.invoke('voice:status'),
+  mics: () => ipcRenderer.invoke('voice:mics'),
   speak: (texto) => ipcRenderer.invoke('voice:speak', { texto }),
   stopSpeaking: () => ipcRenderer.invoke('voice:stop'),
   isSpeaking: () => ipcRenderer.invoke('voice:speaking'),

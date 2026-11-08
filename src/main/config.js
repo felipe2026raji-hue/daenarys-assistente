@@ -44,6 +44,7 @@ const DEFAULTS = {
 
   // voz pt-BR (motor local em engine/): falar as respostas e ouvir pelo microfone
   voice: true,           // liga a voz (falar e ouvir)
+  mic: '',               // microfone da escuta (nome); vazio = escolhe sozinho
   speakReplies: true,    // fala tudo o que ela diz em voz alta
   alwaysListen: true,    // escuta contínua: acorda com a palavra de ativação ("Daenarys")
   chatFollow: true,      // depois de uma fala por voz, continua ouvindo por alguns segundos sem o nome dela
