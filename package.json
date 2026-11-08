@@ -1,6 +1,6 @@
 {
   "name": "capri-desktop",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Daenarys, the desktop assistant, living on your desktop and narrating what Claude Code is doing.",
   "author": "mochiiwuff",
   "repository": "github:mochiiwuff/capri-desktop",
@@ -18,7 +18,7 @@
     "hooks:agy:uninstall": "node scripts/install-hooks-agy.js --uninstall",
     "check:llm": "node scripts/check-llm.js",
     "test:hooks": "node --test tests/hooks.test.js",
-    "test": "node --test tests/hooks.test.js tests/lines.test.js",
+    "test": "node --test tests/hooks.test.js tests/language.test.js tests/lines.test.js",
     "engine:setup": "powershell -ExecutionPolicy Bypass -File engine/setup.ps1",
     "engine:build": "node scripts/build-engine.js",
     "checksums": "node scripts/checksums.js",
