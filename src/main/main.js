@@ -878,13 +878,13 @@ function registerIpc() {
     }
   });
   ipcMain.on('chat:stop', (_e, id) => chats.get(id)?.abort());
-  // voz pt-BR e notícias (engine/: o motor Python local)
+  // voz no idioma dela e notícias (engine/: o motor Python local)
   ipcMain.handle('voice:status', () => engine.status());
-  ipcMain.handle('voice:speak', (_e, { texto } = {}) => engine.speak(texto));
+  ipcMain.handle('voice:speak', (_e, { texto, lang } = {}) => engine.speak(texto, lang));
   ipcMain.handle('voice:stop', () => engine.stopSpeaking());
   ipcMain.handle('voice:speaking', () => engine.isSpeaking());
   ipcMain.handle('voice:stop-listening', () => engine.stopListening());
-  ipcMain.handle('voice:listen', () => engine.listen());
+  ipcMain.handle('voice:listen', (_e, { lang } = {}) => engine.listen(lang));
   ipcMain.handle('voice:mics', async () => {
     const res = await engine.microphones();
     if (Array.isArray(res?.microfones)) micList = res.microfones;

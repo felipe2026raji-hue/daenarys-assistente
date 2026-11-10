@@ -18,7 +18,9 @@ SCRIPT_VOZ_WINDOWS = "; ".join([
     "$voz = New-Object System.Speech.Synthesis.SpeechSynthesizer",
     "$ok = $false",
     "if ($env:NOME_VOZ) { try { $voz.SelectVoice($env:NOME_VOZ); $ok = $true } catch { [Console]::Error.WriteLine('Voz nao encontrada: ' + $env:NOME_VOZ) } }",
-    "if (-not $ok) { $ptbr = $voz.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -eq 'pt-BR' } | Select-Object -First 1; if ($ptbr) { $voz.SelectVoice($ptbr.VoiceInfo.Name) } else { [Console]::Error.WriteLine('Nenhuma voz pt-BR encontrada') } }",
+    "if (-not $ok -and $env:IDIOMA_VOZ) { $exata = $voz.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -eq $env:IDIOMA_VOZ } | Select-Object -First 1; if ($exata) { $voz.SelectVoice($exata.VoiceInfo.Name); $ok = $true } }",
+    "if (-not $ok -and $env:IDIOMA_VOZ) { $prefixo = $env:IDIOMA_VOZ.Substring(0,2); $parecida = $voz.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -like ($prefixo + '-*') } | Select-Object -First 1; if ($parecida) { $voz.SelectVoice($parecida.VoiceInfo.Name); $ok = $true } }",
+    "if (-not $ok -and $env:IDIOMA_VOZ) { [Console]::Error.WriteLine('Nenhuma voz do Windows para ' + $env:IDIOMA_VOZ + '; usando a padrao') }",
     "$voz.Rate = [int]$env:TAXA_FALA",
     "$voz.Volume = [int]$env:VOLUME_FALA",
     "$voz.Speak($env:TEXTO_FALA)",
@@ -91,10 +93,10 @@ class Sintetizador:
                     self._processo_atual = None
         return processo.returncode, saida, erro
 
-    def falar(self, texto):
+    def falar(self, texto, idioma=None):
         with self._trava:
             self._pendentes += 1
-        self.fila.put((self._geracao, texto))
+        self.fila.put((self._geracao, texto, idioma))
 
     def falando(self):
         with self._trava:
@@ -121,10 +123,10 @@ class Sintetizador:
 
     def _trabalhar(self):
         while True:
-            geracao, texto = self.fila.get()
+            geracao, texto, idioma = self.fila.get()
             try:
                 if geracao == self._geracao:
-                    self._falar_agora(texto, geracao)
+                    self._falar_agora(texto, geracao, idioma)
             finally:
                 with self._trava:
                     self._pendentes = max(0, self._pendentes - 1)
@@ -134,34 +136,35 @@ class Sintetizador:
             self._avisos_dados.add(mensagem)
             print(f"[voz] {mensagem}", flush=True)
 
-    def _falar_agora(self, texto, geracao):
+    def _falar_agora(self, texto, geracao, idioma=None):
         texto = limpar_para_fala(texto)
         if not texto:
             return
 
+        ficha = config.idioma(idioma)
         motor = getattr(config, "MOTOR_DE_VOZ", "edge")
         if motor == "edge" and time.time() >= self._edge_pausado_ate:
-            if self._falar_com_voz_neural(texto, geracao):
+            if self._falar_com_voz_neural(texto, geracao, ficha):
                 return
             if geracao != self._geracao:
                 return  # pediram para parar: não repete pela voz do Windows
             self._edge_pausado_ate = time.time() + 60
 
         if geracao == self._geracao:
-            self._falar_com_voz_do_windows(texto, geracao)
+            self._falar_com_voz_do_windows(texto, geracao, ficha)
 
     # ---------- voz neural (edge-tts) ----------
 
-    async def _gerar_audio(self, edge_tts, texto, caminho):
+    async def _gerar_audio(self, edge_tts, texto, caminho, voz):
         comunicador = edge_tts.Communicate(
             texto,
-            getattr(config, "VOZ_NEURAL", "pt-BR-AntonioNeural"),
+            voz or getattr(config, "VOZ_NEURAL", "pt-BR-AntonioNeural"),
             rate=getattr(config, "VOZ_NEURAL_VELOCIDADE", "+0%"),
             pitch=getattr(config, "VOZ_NEURAL_TOM", "+0Hz"),
         )
         await asyncio.wait_for(comunicador.save(caminho), timeout=30)
 
-    def _falar_com_voz_neural(self, texto, geracao):
+    def _falar_com_voz_neural(self, texto, geracao, ficha):
         try:
             import edge_tts
         except ImportError:
@@ -170,7 +173,7 @@ class Sintetizador:
 
         caminho = os.path.join(tempfile.gettempdir(), f"capri_engine_{os.getpid()}.mp3")
         try:
-            asyncio.run(self._gerar_audio(edge_tts, texto, caminho))
+            asyncio.run(self._gerar_audio(edge_tts, texto, caminho, ficha.get("voz")))
 
             ambiente = os.environ.copy()
             ambiente["ARQUIVO_AUDIO"] = caminho
@@ -193,7 +196,7 @@ class Sintetizador:
 
     # ---------- voz do Windows (reserva) ----------
 
-    def _falar_com_voz_do_windows(self, texto, geracao):
+    def _falar_com_voz_do_windows(self, texto, geracao, ficha):
         velocidade = getattr(config, "VELOCIDADE_VOZ", 175)
         volume = getattr(config, "VOLUME_VOZ", 100)
         nome_voz = getattr(config, "VOZ_ESCOLHIDA", "")
@@ -206,6 +209,7 @@ class Sintetizador:
         ambiente["TAXA_FALA"] = str(taxa)
         ambiente["VOLUME_FALA"] = str(volume)
         ambiente["NOME_VOZ"] = nome_voz
+        ambiente["IDIOMA_VOZ"] = ficha.get("cultura", "")
 
         try:
             _codigo, _saida, erro_saida = self._powershell(SCRIPT_VOZ_WINDOWS, ambiente, geracao=geracao)

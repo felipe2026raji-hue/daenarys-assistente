@@ -40,3 +40,36 @@ test('every language locks her reply to itself, with no mixing', async () => {
   assert.match(IN_LANGUAGE.pt.last, /Não misture idiomas/i);
   assert.match(IN_LANGUAGE.pt.now, /inglês ou espanhol/i);
 });
+
+test('her voice speaks and listens in the language chosen', async () => {
+  // the engine's table: a listening code, a neural voice and a Windows culture per language
+  const py = fs.readFileSync(path.join(__dirname, '../engine/config.py'), 'utf8');
+  const codes = new Set();
+  const voices = new Set();
+  for (const lang of LANGS) {
+    const block = py.match(new RegExp(`"${lang}":\\s*\\{([\\s\\S]*?)\\}`));
+    assert.ok(block, `engine/config.py: missing ${lang}`);
+    const code = block[1].match(/"reconhecimento":\s*"([a-z]{2}-[A-Z]{2})"/);
+    const voice = block[1].match(/"voz":\s*"([a-z]{2}-[A-Z]{2}-[A-Za-z]+Neural)"/);
+    const culture = block[1].match(/"cultura":\s*"([a-z]{2}-[A-Z]{2})"/);
+    assert.ok(code, `${lang}: missing recognition code`);
+    assert.ok(voice, `${lang}: missing neural voice`);
+    assert.ok(culture, `${lang}: missing Windows culture`);
+    assert.equal(code[1], culture[1], `${lang}: listening and Windows voice must match`);
+    codes.add(code[1]);
+    voices.add(voice[1]);
+  }
+  // one per language: a copy-paste slip would have two languages sharing a voice
+  assert.equal(codes.size, LANGS.length, 'two languages share a listening code');
+  assert.equal(voices.size, LANGS.length, 'two languages share a neural voice');
+
+  // and what she says when the microphone lets her down, in each language
+  const { TEXTOS } = await import(moduleUrl(path.join(__dirname, '../src/renderer/js/speech.js')));
+  for (const lang of LANGS) {
+    const texts = TEXTOS[lang];
+    assert.ok(texts, `speech.js: missing ${lang}`);
+    for (const key of ['newsTag', 'newsLine', 'newsFail', 'silence', 'busy', 'unclear', 'fail', 'off', 'offline', 'wake']) {
+      assert.ok(texts[key] && String(texts[key]).trim(), `${lang}: missing voice text ${key}`);
+    }
+  }
+});

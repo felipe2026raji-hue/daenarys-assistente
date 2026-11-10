@@ -1,12 +1,13 @@
 // Voz pt-BR do Capri Assistente: fala as respostas (motor local, edge-tts) e ouve o
 // microfone. A escuta pode ficar contínua, acordando com a palavra "Daenarys".
 
-const TEXTOS = {
+export const TEXTOS = {
   pt: {
     newsTag: 'NOTÍCIAS', newsLine: 'Estas são as principais notícias de agora.',
     newsFail: 'Não consegui buscar as notícias agora.',
     silence: 'Não ouvi nada. Tente de novo.',
     busy: 'Ainda estou ouvindo o que você disse.',
+    unclear: 'Não entendi o que você disse.',
     fail: 'Não consegui ouvir. Verifique o microfone e a internet.',
     off: 'A voz está desligada. Ligue em Ajustes rápidos, no meu menu.',
     offline: 'O motor de voz ainda não está pronto.',
@@ -17,6 +18,7 @@ const TEXTOS = {
     newsFail: 'I could not fetch the news right now.',
     silence: 'I heard nothing. Try again.',
     busy: 'I am still listening to you.',
+    unclear: 'I did not catch that.',
     fail: 'I could not listen. Check the microphone and the internet.',
     off: 'Voice is off. Turn it on in Quick settings, in my menu.',
     offline: 'The voice engine is not ready yet.',
@@ -27,6 +29,7 @@ const TEXTOS = {
     newsFail: 'No pude buscar las noticias ahora.',
     silence: 'No oí nada. Inténtalo de nuevo.',
     busy: 'Todavía te estoy escuchando.',
+    unclear: 'No entendí lo que dijiste.',
     fail: 'No pude escuchar. Revisa el micrófono y la internet.',
     off: 'La voz está apagada. Actívala en Ajustes rápidos, en mi menú.',
     offline: 'El motor de voz aún no está listo.',
@@ -37,6 +40,7 @@ const TEXTOS = {
     newsFail: 'Je n’ai pas pu chercher les infos.',
     silence: 'Je n’ai rien entendu. Réessaie.',
     busy: 'Je t’écoute encore.',
+    unclear: 'Je n’ai pas compris ce que tu as dit.',
     fail: 'Je n’ai pas pu écouter. Vérifie le micro et internet.',
     off: 'La voix est coupée. Active-la dans Réglages rapides, dans mon menu.',
     offline: 'Le moteur de voix n’est pas encore prêt.',
@@ -47,6 +51,7 @@ const TEXTOS = {
     newsFail: 'Не удалось получить новости.',
     silence: 'Я ничего не услышала. Попробуй ещё раз.',
     busy: 'Я всё ещё слушаю тебя.',
+    unclear: 'Я не разобрала, что ты сказал.',
     fail: 'Не удалось послушать. Проверь микрофон и интернет.',
     off: 'Голос выключен. Включи его в разделе «Быстрые настройки» в моём меню.',
     offline: 'Голосовой движок ещё не готов.',
@@ -136,8 +141,9 @@ export class Speech {
   }
 
   // Fala um texto (se a voz e as respostas faladas estiverem ligadas). `force` fala mesmo com
-  // "falar as respostas" desligado: as notícias pedidas na hora, por exemplo.
-  async say(texto, { force = false } = {}) {
+  // "falar as respostas" desligado: as notícias pedidas na hora, por exemplo. `lang` troca a
+  // voz desta fala: o boletim é em português mesmo com o app em outra língua.
+  async say(texto, { force = false, lang = null } = {}) {
     if (!this.on || (!this.speakReplies && !force)) return;
     const limpo = limpar(texto);
     if (!limpo) return;
@@ -146,7 +152,7 @@ export class Speech {
       await this.host.stopListening().catch(() => {});
       this.wakeListening = false;
     }
-    const res = await this.host.speak(limpo);
+    const res = await this.host.speak(limpo, lang || this.lang);
     if (!res?.ok) console.warn('[voz] não consegui falar:', res?.error || 'motor indisponível');
     // ela acabou de falar no chat: abre a janela de conversa, para você responder sem o nome dela.
     // O motor só enfileira a fala, então espera o fim dela antes de abrir a janela.
@@ -215,7 +221,7 @@ export class Speech {
       this.wakeListening = true;
       let res = null;
       try {
-        res = await this.host.listen();
+        res = await this.host.listen(this.lang);
       } catch {
         res = null;
       }
@@ -306,7 +312,7 @@ export class Speech {
     this.panel.setListening(true);
     this.capri.perform?.('curious', this.capri.towardCenter?.());
 
-    const res = await this.host.listen().catch((err) => ({ ok: false, error: err.message }));
+    const res = await this.host.listen(this.lang).catch((err) => ({ ok: false, error: err.message }));
     this.listening = false;
     this.panel.setListening(false);
     if (!this.chat.open) return; // ela fechou o chat enquanto você falava
@@ -321,7 +327,9 @@ export class Speech {
     const motivo = res?.motivo;
     const mensagem = motivo === 'silencio' ? this.t.silence
       : motivo === 'ocupado' ? this.t.busy
-        : (res?.mensagem || res?.error || this.t.fail);
+        : motivo === 'incompreensivel' ? this.t.unclear
+          : this.t.fail;
+    if (res?.mensagem || res?.error) console.warn('[voz] escuta:', res.mensagem || res.error);
     this.panel.setFace('aside');
     this.panel.stream(mensagem, { done: true });
   }
@@ -354,7 +362,8 @@ export class Speech {
         hold: 18000,
       });
     }
-    // pedido na hora (ou na abertura, com a voz ligada): fala sempre
-    await this.say(res.texto, { force: true });
+    // pedido na hora (ou na abertura, com a voz ligada): fala sempre. O boletim é em português,
+    // então a voz também, mesmo com o app em outra língua.
+    await this.say(res.texto, { force: true, lang: 'pt' });
   }
 }

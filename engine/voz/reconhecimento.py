@@ -1,4 +1,4 @@
-"""Ouve o microfone e devolve o texto reconhecido (Google, pt-BR)."""
+"""Ouve o microfone e devolve o texto reconhecido (Google, no idioma do app)."""
 
 import math
 import os
@@ -263,18 +263,18 @@ class Reconhecedor:
             self._dispositivo_pronto = True
         return self._dispositivo
 
-    def ouvir(self):
+    def ouvir(self, idioma=None):
         if not self._trava.acquire(blocking=False):
             return ("ocupado", "Já estou ouvindo.")
         self.ocupado = True
         self._parar.clear()
         try:
-            return self._trabalhar()
+            return self._trabalhar(idioma)
         finally:
             self.ocupado = False
             self._trava.release()
 
-    def _trabalhar(self):
+    def _trabalhar(self, idioma=None):
         try:
             audio = self._gravar()
         except Exception as erro:
@@ -283,10 +283,9 @@ class Reconhecedor:
         if audio is None:
             return ("silencio", "Não ouvi nada.")
 
+        fala = config.idioma(idioma)["reconhecimento"]
         try:
-            texto = self.motor.recognize_google(
-                audio, language=config.IDIOMA_RECONHECIMENTO
-            )
+            texto = self.motor.recognize_google(audio, language=fala)
             return ("texto", texto)
         except sr.UnknownValueError:
             return ("incompreensivel", "Não consegui entender o que você disse.")

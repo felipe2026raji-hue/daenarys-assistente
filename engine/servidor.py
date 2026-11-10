@@ -6,9 +6,9 @@ Endpoints:
     GET  /estado
     GET  /microfones
     POST /microfone  {"nome": "..."}   (vazio = automático)
-    POST /falar      {"texto": "..."}
+    POST /falar      {"texto": "...", "idioma": "pt"}
     POST /parar
-    POST /ouvir
+    POST /ouvir      {"idioma": "pt"}
     POST /noticias   {"assunto": "...", "quantidade": 5}
 """
 
@@ -101,7 +101,7 @@ class Handler(BaseHTTPRequestHandler):
             texto = str(corpo.get("texto", "") or "").strip()
             if not texto:
                 return self._responder(400, {"ok": False, "erro": "texto vazio"})
-            SINTETIZADOR.falar(texto)
+            SINTETIZADOR.falar(texto, corpo.get("idioma"))
             return self._responder(200, {"ok": True})
 
         if self.path == "/parar":
@@ -109,7 +109,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._responder(200, {"ok": True})
 
         if self.path == "/ouvir":
-            tipo, texto = RECONHECEDOR.ouvir()
+            tipo, texto = RECONHECEDOR.ouvir(corpo.get("idioma"))
             if tipo == "texto":
                 return self._responder(200, {"ok": True, "texto": texto})
             return self._responder(200, {"ok": False, "motivo": tipo, "mensagem": texto})

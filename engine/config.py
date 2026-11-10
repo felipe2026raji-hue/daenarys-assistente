@@ -10,7 +10,7 @@ PASTA_PROJETO = Path(__file__).resolve().parent
 
 # ---------- voz: falar ----------
 MOTOR_DE_VOZ = "edge"                    # "edge" (neural, internet) ou "windows" (offline)
-VOZ_NEURAL = "pt-BR-ThalitaMultilingualNeural"  # vozes: pt-BR-ThalitaMultilingualNeural, pt-BR-FranciscaNeural, pt-BR-AntonioNeural, ...
+VOZ_NEURAL = "pt-BR-ThalitaMultilingualNeural"  # reserva quando o idioma não está em IDIOMAS
 VOZ_NEURAL_VELOCIDADE = "-5%"
 VOZ_NEURAL_TOM = "+0Hz"
 VELOCIDADE_VOZ = 175                     # voz do Windows (reserva)
@@ -19,6 +19,48 @@ VOZ_ESCOLHIDA = ""                       # nome de uma voz do Windows; vazio = a
 
 # ---------- voz: ouvir ----------
 IDIOMA_RECONHECIMENTO = "pt-BR"
+
+# O app fala cinco línguas: o idioma escolhido chega em cada pedido (/falar e /ouvir) e
+# aqui vira o código da escuta, a voz neural e a cultura da voz do Windows.
+IDIOMAS = {
+    "pt": {
+        "reconhecimento": "pt-BR",
+        "voz": "pt-BR-ThalitaMultilingualNeural",
+        "cultura": "pt-BR",
+    },
+    "en": {
+        "reconhecimento": "en-US",
+        "voz": "en-US-AriaNeural",
+        "cultura": "en-US",
+    },
+    "es": {
+        "reconhecimento": "es-ES",
+        "voz": "es-ES-ElviraNeural",
+        "cultura": "es-ES",
+    },
+    "fr": {
+        "reconhecimento": "fr-FR",
+        "voz": "fr-FR-DeniseNeural",
+        "cultura": "fr-FR",
+    },
+    "ru": {
+        "reconhecimento": "ru-RU",
+        "voz": "ru-RU-SvetlanaNeural",
+        "cultura": "ru-RU",
+    },
+}
+IDIOMA_PADRAO = "pt"
+
+
+def idioma(codigo=None):
+    """A ficha do idioma pedido: 'fr', 'pt-BR' e 'pt_BR' levam ao mesmo lugar.
+
+    Um código fora dos cinco (ou vazio) cai no padrão, para a voz nunca ficar muda.
+    """
+    chave = str(codigo or "").strip().lower().replace("_", "-").split("-")[0]
+    return IDIOMAS.get(chave, IDIOMAS[IDIOMA_PADRAO])
+
+
 # Microfone de entrada: "" escolhe sozinho (ignora Voicemod, Dummy, cabo virtual...),
 # um número usa o dispositivo do sounddevice (veja `python -m sounddevice`),
 # ou um pedaço do nome, por exemplo "High Definition".

@@ -46,8 +46,8 @@ Compare com a linha correspondente do `SHA256SUMS.txt`.
 
 | Recurso | Como funciona |
 |---|---|
-| **Falar** | Tudo o que ela diz é lido em voz alta com `edge-tts` (voz neural `pt-BR-ThalitaMultilingualNeural`). Sem internet, cai para a voz do Windows. |
-| **Ouvir** | Escuta contínua com a palavra de ativação **“Daenarys”**: diga “Daenarys, abre o Chrome”. Depois de cada resposta falada, ela continua ouvindo por 12 segundos, sem repetir o nome (modo conversa). Também pelo botão do microfone ou `Ctrl+Alt+J`. |
+| **Falar** | Tudo o que ela diz é lido em voz alta com `edge-tts`, na voz do idioma escolhido: `pt-BR-ThalitaMultilingualNeural`, `en-US-AriaNeural`, `es-ES-ElviraNeural`, `fr-FR-DeniseNeural` ou `ru-RU-SvetlanaNeural`. Sem internet, cai para a voz do Windows daquele idioma (se estiver instalada). |
+| **Ouvir** | Escuta contínua com a palavra de ativação **“Daenarys”**: diga “Daenarys, abre o Chrome”. O reconhecimento acompanha o idioma do app (pt-BR, en-US, es-ES, fr-FR, ru-RU). Depois de cada resposta falada, ela continua ouvindo por 12 segundos, sem repetir o nome (modo conversa). Também pelo botão do microfone ou `Ctrl+Alt+J`. |
 | **Comandos do PC** | Abre apps e pastas por nome ou caminho, controla volume, tema e janelas, apaga a tela, suspende, hiberna, bloqueia, desliga e reinicia. |
 | **IA** | Gemini, Groq, Ollama e outros provedores já suportados pela Daenarys. Chaves em `Chave de API ou endereço…`. |
 | **Notícias** | Manchetes de Google Notícias, Agência Brasil e BBC Brasil; lidas na abertura e pelo menu. |
@@ -55,6 +55,8 @@ Compare com a linha correspondente do `SHA256SUMS.txt`.
 | **Interatividade** | Modo conversa, iniciativa própria, memória viva e brincadeiras de fantasia — veja abaixo. |
 | **Bandeja e atalho** | Ícone na bandeja e `Ctrl+Alt+C` para esconder/mostrar. |
 | **Atualizações** | Ao abrir, ela procura uma versão nova nas releases do GitHub e baixa em segundo plano; o menu passa a mostrar **Reiniciar e atualizar**. Dá para desligar em **Mais opções → Atualizar sozinha**. A versão portátil não se atualiza sozinha: baixe o `.exe` novo. |
+
+> **Voz no idioma dela:** o idioma escolhido em **Mais opções → Idioma** vale para o que ela fala e para o que ela ouve. A voz neural precisa de internet; sem conexão, ela usa a voz do Windows — para os cinco idiomas, instale as vozes em **Windows → Configurações → Hora e idioma → Fala**.
 
 ### Controle do PC por voz ou texto
 

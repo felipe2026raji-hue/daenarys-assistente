@@ -205,12 +205,12 @@ class Engine {
     });
   }
 
-  async speak(texto) {
+  async speak(texto, idioma = null) {
     const text = String(texto || '').trim();
     if (!text) return { ok: false, error: 'texto vazio' };
     if (!(await this.ensure())) return { ok: false, error: this.error || 'motor indisponível' };
     try {
-      return await this.request('POST', '/falar', { texto: text }, 8000);
+      return await this.request('POST', '/falar', { texto: text, idioma }, 8000);
     } catch (err) {
       return { ok: false, error: err.message };
     }
@@ -274,10 +274,10 @@ class Engine {
   }
 
   // Bloqueia até você terminar de falar (ou desistir). O timeout acompanha o motor.
-  async listen() {
+  async listen(idioma = null) {
     if (!(await this.ensure())) return { ok: false, error: this.error || 'motor indisponível' };
     try {
-      return await this.request('POST', '/ouvir', {}, 40000);
+      return await this.request('POST', '/ouvir', { idioma }, 40000);
     } catch (err) {
       return { ok: false, error: err.message };
     }
