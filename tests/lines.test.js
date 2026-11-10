@@ -26,6 +26,8 @@ const MENU_KEYS = [
   'mic', 'micAuto', 'micNone',
   'size', 'small', 'medium', 'large', 'theme', 'themeClassic', 'motion',
   'lang', 'auto', 'startup', 'show', 'hide',
+  'updateCheck', 'updateChecking', 'updateDownloading', 'updateReady',
+  'updateReadyBody', 'updateNone', 'updateError', 'updatePortable', 'updateAuto',
 ];
 
 // Every string the settings card renders (settings.js).

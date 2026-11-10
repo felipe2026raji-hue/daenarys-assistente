@@ -29,6 +29,7 @@ const { createBridge } = require('./bridge');
 const { startWindowWatch } = require('./windows');
 const llm = require('./llm');
 const { engine } = require('./engine');
+const update = require('./update');
 const ollama = require('./ollama');
 const setup = require('./setup');
 const apps = require('./apps');
@@ -66,6 +67,8 @@ let cloud = { at: 0, account: null, free: [] };
 const chats = new Map(); // id -> AbortController of an answer being streamed
 let micList = [];       // microfones que o motor ofereceu (para o menu da bandeja)
 let micsFetching = null; // uma busca em andamento, para não repetir
+let manualUpdate = false;      // the check you asked for: it answers even when there's nothing new
+let lastUpdateStatus = 'idle'; // to tell "downloaded" once, not on every redraw
 
 const userSoundsDir = () => path.join(app.getPath('userData'), 'sounds');
 
@@ -567,6 +570,8 @@ function rebuildTray() {
         },
         { label: t.lang, submenu: languageMenu },
         { type: 'separator' },
+        ...updateItems(t, cfg),
+        { type: 'separator' },
         { label: t.quit, click: () => app.quit() },
       ],
     },
@@ -575,6 +580,47 @@ function rebuildTray() {
   ]);
   tray.setContextMenu(menu);
   trayMenu = menu;
+}
+
+// From the tray: one line that says where the update is (checking, downloading, ready to
+// restart), and the switch for the quiet check at startup.
+function updateItems(t, cfg) {
+  const s = update.current();
+  let item;
+  if (s.status === 'ready') item = { label: t.updateReady(s.version || ''), click: () => update.install() };
+  else if (s.status === 'checking') item = { label: t.updateChecking, enabled: false };
+  else if (s.status === 'available' || s.status === 'downloading') item = { label: t.updateDownloading(s.percent || 0), enabled: false };
+  else if (s.status === 'dev' || s.status === 'portable') item = { label: t.updateCheck, click: () => update.openReleases() };
+  else item = { label: t.updateCheck, click: () => checkUpdates() };
+  return [
+    item,
+    { label: t.updateAuto, type: 'checkbox', checked: cfg.autoUpdate !== false, click: (i) => updateConfig({ autoUpdate: i.checked }) },
+  ];
+}
+
+function notify(body) {
+  update.tell('Daenarys', body);
+}
+
+// She answers when you asked (nothing new, no way to check), and once when an update is ready.
+function onUpdateState(s) {
+  rebuildTray();
+  console.log('[capri] atualização:', s.status, s.version || '', s.error || '');
+  const t = TRAY[resolveLang(config.load().lang)];
+  if (s.status === 'ready' && lastUpdateStatus !== 'ready') {
+    notify(t.updateReadyBody(s.version || ''));
+  } else if (manualUpdate) {
+    if (s.status === 'none') notify(t.updateNone);
+    else if (s.status === 'dev' || s.status === 'portable') notify(t.updatePortable);
+    else if (s.status === 'error' || s.status === 'unavailable') notify(t.updateError);
+  }
+  if (!['checking', 'available', 'downloading'].includes(s.status)) manualUpdate = false;
+  lastUpdateStatus = s.status;
+}
+
+async function checkUpdates() {
+  manualUpdate = true;
+  await update.check();
 }
 
 // Run from a clone (`npm start`), electron.exe alone would open the default Electron app at login:
@@ -1142,6 +1188,7 @@ function main() {
     registerIpc();
     createOverlay();
     createTray();
+    update.init(onUpdateState); // ela se atualiza pelas releases do GitHub
     // voz pt-BR e notícias: o motor Python sobe escondido e responde em 127.0.0.1
     engine.setMic(config.load().mic);
     engine.start(ROOT).then((status) => {
@@ -1171,6 +1218,7 @@ function main() {
     }
     llm.restoreClaude(readMemory().claude);
     refreshModels(); // for her menu's model list
+    update.start({ enabled: config.load().autoUpdate !== false }); // uma olhada discreta, depois que ela abriu
     setTimeout(() => launch.launchables().catch(() => {}), 20000); // what she can open, before you ask
     // a screen plugged in, unplugged, or rearranged: her window fitted again, and she learns of it
     const screensChanged = () => {

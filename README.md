@@ -54,6 +54,7 @@ Compare com a linha correspondente do `SHA256SUMS.txt`.
 | **Personalidade** | Fala natural de gente, com humor e fantasia dosada (dragão, lua, cometa, feitiço) — sem vícios de robô como “Claro!”, “Como posso ajudar?” ou listas. Memória e vínculo da Daenarys, em português. |
 | **Interatividade** | Modo conversa, iniciativa própria, memória viva e brincadeiras de fantasia — veja abaixo. |
 | **Bandeja e atalho** | Ícone na bandeja e `Ctrl+Alt+C` para esconder/mostrar. |
+| **Atualizações** | Ao abrir, ela procura uma versão nova nas releases do GitHub e baixa em segundo plano; o menu passa a mostrar **Reiniciar e atualizar**. Dá para desligar em **Mais opções → Atualizar sozinha**. A versão portátil não se atualiza sozinha: baixe o `.exe` novo. |
 
 ### Controle do PC por voz ou texto
 

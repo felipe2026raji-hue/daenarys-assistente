@@ -98,6 +98,8 @@ jobs:
             dist/Daenarys-Setup-*.exe
             dist/Daenarys-Portable-*.exe
             dist/SHA256SUMS.txt
+            dist/latest.yml
+            dist/*.blockmap
           generate_release_notes: true
           draft: false
           prerelease: false

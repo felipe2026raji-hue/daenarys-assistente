@@ -52,6 +52,7 @@ const DEFAULTS = {
   newsOnStart: true,     // lê as manchetes quando ela abre
   newsEveryMin: 30,      // não repete o boletim de abertura antes disso
   newsLast: 0,           // quando o último boletim foi dado (ms)
+  autoUpdate: true,      // procura uma versão nova no GitHub ao abrir (update.js)
 };
 
 let cache = null;
