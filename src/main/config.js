@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { app } = require('electron');
+const keys = require('./keys');
 
 const DEFAULTS = {
   scale: 0.6,        // sprite scale, 0.6 ≈ 250px tall
@@ -57,6 +58,37 @@ const DEFAULTS = {
 
 let cache = null;
 
+// Keys never reach the disk in plain text: anything that isn't sealed yet is sealed here, and
+// what can't be sealed (no safe storage) is left out instead of written as it came.
+function blindarChaves(patch) {
+  if (!patch || !patch.apiKeys) return patch;
+  const apiKeys = {};
+  const soltas = [];
+  for (const [id, valor] of Object.entries(patch.apiKeys)) {
+    if (!valor || keys.selada(valor)) {
+      apiKeys[id] = valor;
+      continue;
+    }
+    if (keys.disponivel()) {
+      try {
+        apiKeys[id] = keys.selar(valor);
+        continue;
+      } catch {
+        // falls through: not written
+      }
+    }
+    soltas.push(id);
+  }
+  if (soltas.length) {
+    try {
+      require('./log').aviso('chaves', `não gravei ${soltas.join(', ')}: este Windows não oferece armazenamento seguro`);
+    } catch {
+      // the log never blocks a save
+    }
+  }
+  return { ...patch, apiKeys };
+}
+
 function file() {
   return path.join(app.getPath('userData'), 'config.json');
 }
@@ -72,7 +104,7 @@ function load(fresh = false) {
 }
 
 function save(patch) {
-  cache = { ...load(), ...patch };
+  cache = { ...load(), ...blindarChaves(patch) };
   try {
     fs.mkdirSync(path.dirname(file()), { recursive: true });
     fs.writeFileSync(file(), JSON.stringify(cache, null, 2));

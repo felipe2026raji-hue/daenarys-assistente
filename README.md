@@ -133,6 +133,13 @@ Ou simplesmente dê **duplo clique em `INICIAR.bat`**: ele confere Node, instala
 
 - No menu da bandeja, abra **Inteligência › Modelo de IA › Chave de API ou endereço…** e informe a chave do provedor
   (por exemplo, Google Gemini). As chaves também podem vir das variáveis `GEMINI_API_KEY` e `GROQ_API_KEY`.
+  A chave fica **cifrada** no `config.json` com o seu Windows (DPAPI, `enc:…`): nem outro usuário do PC nem um backup
+  copiado para outra máquina conseguem lê-la. Se um `config.json` antigo tiver chave em texto puro, ela é cifrada
+  sozinha na próxima abertura.
+- Quando algo dá errado, o app escreve em `%APPDATA%\capri-desktop\logs\daenarys.log` (três arquivos de 512 KB, os
+  antigos viram `.1` e `.2`). Em **Mais opções › Abrir os logs** você abre a pasta; em **Copiar diagnóstico** ele põe no
+  clipboard a versão, o sistema, o idioma, o provedor, o estado do motor e as últimas linhas de erro — sem chaves, que
+  são mascaradas antes de chegar ao arquivo. É isso que você manda junto de um relato de problema.
 - Em **Ajustes rápidos**, ligue/desligue a voz, a fala de tudo o que ela diz, a escuta contínua (**Ouvir sempre**) e o
   **Continuar a conversa** (responde sem repetir o nome), além das notícias na abertura. Com **Ouvir sempre**
   ligado, ela fica te escutando e acorda quando você diz **“Daenarys”** (ou “Dany”, “Dani”, “Capri”), seguido

@@ -9,8 +9,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawn, execFile } = require('node:child_process');
-const { safeStorage } = require('electron');
 const ollama = require('./ollama');
+const keys = require('./keys');
 
 const WIN = process.platform === 'win32';
 
@@ -130,21 +130,31 @@ function launchThroughOllama(integration) {
 }
 
 // API keys are kept encrypted in config.json, with your Windows account (DPAPI): "enc:<base64>".
+// keys.js does the work; a save without safe storage fails on purpose instead of writing it plain.
 function sealKey(key) {
-  return safeStorage.isEncryptionAvailable() ? `enc:${safeStorage.encryptString(key).toString('base64')}` : key;
+  return keys.selar(key);
 }
 
 function openKey(stored) {
-  if (typeof stored !== 'string' || !stored.startsWith('enc:')) return stored || '';
-  try {
-    return safeStorage.decryptString(Buffer.from(stored.slice(4), 'base64'));
-  } catch {
-    return '';
-  }
+  return keys.abrir(stored);
 }
 
 const openKeys = (apiKeys = {}) => Object.fromEntries(Object.entries(apiKeys).map(([id, v]) => [id, openKey(v)]));
 
+// An old config.json (or one edited by hand) may still carry a key in plain text: seal it now,
+// once, and say so in the log. Runs at startup, before anything reads the keys.
+function migrateKeys(cfg) {
+  const entries = Object.entries(cfg?.apiKeys || {}).filter(([, value]) => value && !keys.selada(value));
+  if (!entries.length) return { moved: 0, blocked: 0 };
+  if (!keys.disponivel()) {
+    require('./log').aviso('chaves', `${entries.length} chave(s) em texto puro no config.json: este Windows não oferece armazenamento seguro`);
+    return { moved: 0, blocked: entries.length };
+  }
+  const apiKeys = { ...cfg.apiKeys };
+  for (const [id, value] of entries) apiKeys[id] = keys.selar(value);
+  return { moved: entries.length, blocked: 0, apiKeys };
+}
+
 module.exports = {
-  MODELS, KEY_PAGES, ollamaState, installOllama, startOllama, pullModel, launchThroughOllama, sealKey, openKeys,
+  MODELS, KEY_PAGES, ollamaState, installOllama, startOllama, pullModel, launchThroughOllama, sealKey, openKeys, migrateKeys,
 };

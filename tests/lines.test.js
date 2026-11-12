@@ -28,6 +28,7 @@ const MENU_KEYS = [
   'lang', 'auto', 'startup', 'show', 'hide',
   'updateCheck', 'updateChecking', 'updateDownloading', 'updateReady',
   'updateReadyBody', 'updateNone', 'updateError', 'updatePortable', 'updateAuto',
+  'logs', 'copyDiag', 'diagCopied', 'keyNoSafe',
 ];
 
 // Every string the settings card renders (settings.js).
@@ -39,7 +40,7 @@ const SETTINGS_KEYS = [
   'wander', 'possess', 'newsStart',
   'lookSection', 'size', 'small', 'medium', 'large', 'theme', 'neon', 'classic',
   'motion', 'motionAuto', 'motionFull', 'motionReduced', 'rest', 'restCorner', 'restTaskbar', 'muted',
-  'system', 'lang', 'auto', 'customize', 'model', 'sounds', 'menu',
+  'system', 'lang', 'auto', 'customize', 'model', 'sounds', 'logs', 'menu',
 ];
 
 test('menu and settings card are complete in every language', async () => {

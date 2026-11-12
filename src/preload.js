@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('host', {
   setConfig: (patch) => ipcRenderer.invoke('config:set', patch),
   listSounds: () => ipcRenderer.invoke('sounds:list'),
   openSounds: () => ipcRenderer.send('sounds:open'),
+  openLogs: () => ipcRenderer.invoke('logs:open'),
+  copyDiag: () => ipcRenderer.invoke('logs:copy'),
   hooksStatus: () => ipcRenderer.invoke('hooks:status'),
   demoWindow: (open) => ipcRenderer.invoke('demo:window', Boolean(open)),
   openMenu: () => ipcRenderer.send('menu:open'),

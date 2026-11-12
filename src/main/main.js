@@ -40,11 +40,16 @@ const { ASSISTANTS, assistant } = require('./assistants');
 const activeAssistant = () => assistant(config.load().assistant); // Claude Code or Codex
 const activeHooks = () => activeAssistant().hooks;
 const demoSteps = require('../../scripts/demo-sequence');
+const log = require('./log');
+const keys = require('./keys');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const DEV = process.argv.includes('--dev');
 const PORT = Number(process.env.CAPRI_PORT) || 47823;
 const SOUND_EXT = /\.(mp3|wav|ogg|m4a)$/i;
+
+// O diário dela: tudo o que passa pelo console (e uma queda) fica em logs/daenarys.log.
+log.iniciar();
 
 const OLLAMA_SITE = 'https://ollama.com';
 
@@ -297,6 +302,23 @@ function resolveLang(setting) {
   }
   return 'en';
 }
+
+// What "Copy diagnostics" tells: the machine as it is now, never the keys themselves.
+log.contexto(() => {
+  const cfg = config.load();
+  const motor = engine.status();
+  const up = update.current();
+  return {
+    idioma: resolveLang(cfg.lang),
+    idiomaEscolhido: cfg.lang,
+    provedor: cfg.provider,
+    modelo: pickModel(cfg) || '',
+    chaves: Object.keys(cfg.apiKeys || {}).join(', ') || 'nenhuma',
+    motor: motor?.state === 'ready' ? `pronto (porta ${motor.port})` : `${motor?.state || '?'}${motor?.error ? `: ${motor.error}` : ''}`,
+    atualizacao: `${up?.status || '?'}${up?.version ? ` ${up.version}` : ''}`,
+    log: log.caminho(),
+  };
+});
 
 // What the overlay gets: `lang` is the resolved one, `langSetting` what the user picked.
 function rendererConfig() {
@@ -569,6 +591,16 @@ function rebuildTray() {
           click: (item) => app.setLoginItemSettings({ ...loginItemOptions(), openAtLogin: item.checked }),
         },
         { label: t.lang, submenu: languageMenu },
+        { type: 'separator' },
+        // o diário dela: a pasta dos logs e o relatório para mandar junto de um problema
+        { label: t.logs, click: () => log.abrirPasta() },
+        {
+          label: t.copyDiag,
+          click: () => {
+            clipboard.writeText(log.relatorio());
+            notify(t.diagCopied);
+          },
+        },
         { type: 'separator' },
         ...updateItems(t, cfg),
         { type: 'separator' },
@@ -963,9 +995,17 @@ function registerIpc() {
     if (!llm.PROVIDERS[provider]) return { ok: false, error: 'unknown provider' };
     const before = config.load();
     const patch = { provider };
-    if (key) patch.apiKeys = { ...before.apiKeys, [provider]: setup.sealKey(String(key).trim()) };
+    if (key) {
+      try {
+        patch.apiKeys = { ...before.apiKeys, [provider]: setup.sealKey(String(key).trim()) };
+      } catch {
+        // sem DPAPI (raro no Windows): guardar em texto puro não é opção
+        return { ok: false, error: TRAY[resolveLang(before.lang)].keyNoSafe };
+      }
+    }
     if (url) patch.customUrl = String(url).trim();
     updateConfig(patch);
+    if (key) log.info('chaves', `chave de ${provider} guardada (cifrada)`);
     const models = await refreshModels();
     if (models?.length) return { ok: true, model: pickModel() };
     const error = models ? 'no model' : chatError || 'offline';
@@ -1052,6 +1092,16 @@ function registerIpc() {
     fs.mkdirSync(userSoundsDir(), { recursive: true });
     shell.openPath(userSoundsDir());
   });
+  // the diary: the logs folder, and the report that goes with a bug report
+  ipcMain.handle('logs:open', () => log.abrirPasta());
+  ipcMain.handle('logs:copy', () => {
+    try {
+      clipboard.writeText(log.relatorio());
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
 }
 
 // Only in --dev: lets scripts drive the overlay and grab frames of it (no desktop content, just our window).
@@ -1066,6 +1116,10 @@ async function debugHandler(route, body) {
   if (route === 'reload') {
     overlay.webContents.reloadIgnoringCache();
     return { ok: true };
+  }
+  if (route === 'logs') {
+    // what the logs folder and "Copy diagnostics" hold, without opening anything
+    return { ok: true, path: log.caminho(), lines: log.linhas(30), report: log.relatorio() };
   }
   if (route === 'unhook') {
     // the pointer no longer passed on to her, as when Windows drops the mouse hook
@@ -1183,6 +1237,13 @@ function main() {
   if (process.platform === 'win32') app.setAppUserModelId('capri.desktop');
 
   app.whenReady().then(() => {
+    // Um config.json antigo (ou editado à mão) pode ter chave em texto puro: fecha com o DPAPI
+    // antes de qualquer coisa ler as chaves.
+    const migradas = setup.migrateKeys(config.load(true));
+    if (migradas.moved) {
+      config.save({ apiKeys: migradas.apiKeys });
+      log.info('chaves', `${migradas.moved} chave(s) que estavam em texto puro foram cifradas agora`);
+    }
     if (!['codex', 'claude'].includes(config.load().assistant)) config.save({ assistant: activeAssistant().id });
     serveProtocol();
     registerIpc();

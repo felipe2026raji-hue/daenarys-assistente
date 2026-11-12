@@ -177,6 +177,7 @@ export class Settings {
     this.foot.replaceChildren(this.footButton(t.customize, () => this.customize()),
       this.footButton(t.model, () => this.model()),
       this.footButton(t.sounds, () => this.host.openSounds()),
+      this.footButton(t.logs, () => this.host.openLogs()),
       this.footButton(t.menu, () => this.host.openMenu(), true));
 
     this.refresh();
