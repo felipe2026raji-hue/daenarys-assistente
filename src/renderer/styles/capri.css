@@ -1294,3 +1294,29 @@ html[data-motion='reduced'] .settings.is-entering .settings__plate {
 html[data-motion='reduced'] .settings__switch .settings__knob {
   transition: none;
 }
+
+/* ---------- hint (the first time you hover her) ---------- */
+
+.hint {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  width: max-content;
+  max-width: min(86vw, 620px);
+  padding: 5px 10px;
+  background: var(--ink);
+  color: var(--paper-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-data);
+  line-height: 1.35;
+  text-align: center;
+  pointer-events: none;
+  transform: translate(-50%, -170%);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%);
+  filter:
+    drop-shadow(2px 0 0 var(--cyan)) drop-shadow(-2px 0 0 var(--cyan))
+    drop-shadow(0 2px 0 var(--yellow)) drop-shadow(0 -2px 0 var(--yellow));
+}
+
+.hint[hidden] { display: none; }

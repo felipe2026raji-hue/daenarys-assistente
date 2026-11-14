@@ -154,12 +154,53 @@ async function boot() {
     mouse = { x: e.clientX, y: e.clientY };
     refreshHit();
     hoverChip();
+    hoverHer();
   });
   document.addEventListener('mouseleave', () => {
     mouse = null;
     refreshHit();
     hoverChip();
+    hideHint();
   });
+
+  // Hovering her a moment, the first time: what you can do with her, in one line.
+  const hint = document.getElementById('hint');
+  let hintDelay = 0;
+  let hintHide = 0;
+  let hintShown = false;
+  const hideHint = () => {
+    clearTimeout(hintDelay);
+    clearTimeout(hintHide);
+    hint.hidden = true;
+  };
+  const hoverHer = () => {
+    if (hintShown) return;
+    hideHint();
+    if (!mouse || !capri.hit(mouse.x, mouse.y) || capri.stowed || capri.dormant) return;
+    hintDelay = setTimeout(() => {
+      if (!mouse || !capri.hit(mouse.x, mouse.y)) return;
+      hintShown = true;
+      const mx = mouse.x;
+      const my = mouse.y;
+      hint.textContent = brain.t.hint;
+      hint.style.transform = '';
+      hint.style.top = `${Math.round(my)}px`;
+      hint.hidden = false;
+      // over her head, but never off the edge of the screen: centered on the pointer, pulled
+      // back inside, and under her head if there's no room above. The plate is measured again
+      // on the next frame, as a long line can only settle its size after the first layout.
+      const fit = () => {
+        hint.style.transform = '';
+        const box = hint.getBoundingClientRect();
+        const half = box.width / 2;
+        hint.style.left = `${Math.round(Math.min(Math.max(mx, half + 8), window.innerWidth - half - 8))}px`;
+        if (box.top < 8) hint.style.transform = 'translate(-50%, 30%)';
+      };
+      fit();
+      requestAnimationFrame(fit);
+      hintHide = setTimeout(() => { hint.hidden = true; }, 5600);
+    }, 1400);
+  };
   // Where the pointer really is, every couple of seconds: if it moved over her window and no
   // mousemove came, the hook that brings it to her is gone (Windows drops it without a word, after
   // sleep say), and main.js puts in a new one.
@@ -226,6 +267,12 @@ async function boot() {
   panel.onChar = (kind) => voice.play('blip', { mood: kind });
   panel.onTalk = (talking) => talking && capri.perform('talk');
   capri.onMenu = () => host.openMenu();
+  // the wheel over her: her new size goes into your settings a moment later
+  let scaleWrite = 0;
+  capri.onScale = (scale) => {
+    clearTimeout(scaleWrite);
+    scaleWrite = setTimeout(() => host.setConfig({ scale }), 400);
+  };
 
   // Her guide (guide.js): her welcome on first launch, and "How does it work?" in her menu,
   // where she takes you to things and points at them.
@@ -262,7 +309,10 @@ async function boot() {
   brain.onRival = (key) => jealousy.onRivalEvent(key);
   const reminders = new Reminders({ host, list: config.reminders || [] });
   chat.reminders = reminders;
-  chat.onMessage = () => bond.add('chat', 2);
+  chat.onMessage = () => {
+    bond.add('chat', 2);
+    spark.markTalk();
+  };
   // looking at your screen (look.js): when you ask, or now and then if you turned it on
   const look = new Look({ capri, panel, brain, chat, guide, host, fx, voice, active: () => performance.now() - lastMove });
   look.configure(config);
@@ -293,13 +343,15 @@ async function boot() {
   const play = new Play({ chat, panel, brain, capri });
   chat.play = play;
   // ela puxa assunto de vez em quando (spark.js): madrugada, sessão longa, memória viva
-  const spark = new Spark({ panel, brain, speech, capri, chat, guide, active: () => performance.now() - lastMove });
+  const spark = new Spark({ panel, brain, speech, capri, chat, guide, active: () => performance.now() - lastMove, apps: () => host.openApps() });
   spark.enabled = config.spark !== false;
   spark.start();
 
   // Clicking her: what's going on, or she offers to talk. Sulking, she turns her back on you.
   // About to close one of your other AIs' pages, she leaves it.
   capri.onClick = () => {
+    hideHint();
+    spark.markTalk();
     if (settings?.visible) {
       settings.close(); // she answers instead of the card
       return;
@@ -307,9 +359,29 @@ async function boot() {
     if (jealousy.spare()) return;
     if (panel.visible) panel.hide();
     else if (!jealousy.onClick()) {
+      capri.perform('nod');
       brain.status();
       bond.add('click', 1);
     }
+  };
+
+  // A double click on her: a little trick. Before she's attached to you it startles her; after,
+  // she spins and dances. Either way she has something to say about it.
+  capri.onDoubleClick = () => {
+    hideHint();
+    spark.markTalk();
+    if (settings?.visible || panel.visible || capri.stowed || capri.dormant || capri.mode === 'sleep') return;
+    const t = brain.t.trick;
+    if (bond.stage >= 2 && !['angry', 'sulk'].includes(bond.feeling)) {
+      voice.play('star');
+      capri.perform('spin').then(() => capri.perform('dance'));
+      panel.say({ kind: 'info', face: pick(['laugh', 'grin', 'smug']), line: pick(t.happy), hold: 3000 });
+      bond.add('click', 1);
+      return;
+    }
+    voice.play('alert');
+    capri.perform('flinch', capri.towardCenter());
+    panel.say({ kind: 'info', face: 'wide', line: pick(t.startled), hold: 3000 });
   };
 
   // Thrown around (capri.js throwHer): she says how it was. The first time she's shaken (or she
@@ -403,7 +475,7 @@ async function boot() {
     if (!['angry', 'sulk'].includes(bond.feeling)) bond.feel('happy', { percent: bond.percent });
     voice.play('star');
     await capri.perform('split');
-    capri.perform('hop');
+    capri.perform('dance');
     panel.say({
       kind: 'done', badge: `${brain.t.state.info} ${bond.percent}%`, face: stage >= 3 ? 'laugh' : 'look',
       line: fmt(up.line, { percent: bond.percent }), quote: up.quote, progress: bond.percent / 100, hold: 9000,
@@ -419,7 +491,7 @@ async function boot() {
     capri.wake();
     setTimeout(() => {
       if (!quiet()) return;
-      capri.perform('hop');
+      capri.perform('bow');
       panel.say({ kind: 'idle', face: 'look', line: pick(brain.t.bond.back), hold: 3500 });
     }, 700);
   };

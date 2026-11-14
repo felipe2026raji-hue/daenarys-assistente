@@ -83,5 +83,21 @@ test('the extra lines (spark, play, settings) reach every language', async () =>
     assert.equal(typeof text.settings.title, 'string');
     assert.equal(typeof text.spark.night?.length, 'number');
     assert.equal(typeof text.play.rpsAsk, 'string');
+    // what she talks about on her own, and the little things around the mouse
+    for (const key of ['night', 'long', 'many', 'idle', 'memory', 'muse', 'morning', 'evening', 'silence', 'app']) {
+      assert.ok(Array.isArray(text.spark[key]) && text.spark[key].length, `${lang}.spark.${key}`);
+    }
+    assert.ok(text.spark.app.every((line) => line.includes('{app}')), `${lang}.spark.app needs {app}`);
+    for (const key of ['startled', 'happy']) assert.ok(text.trick[key]?.length, `${lang}.trick.${key}`);
+    assert.ok(text.hint?.trim(), `${lang}.hint`);
+  }
+});
+
+test('she talks about the same things in every language', async () => {
+  const { linesFor } = await linesModule();
+  const base = Object.keys(linesFor('fr').spark).sort();
+  for (const lang of LANGS) {
+    assert.deepEqual(Object.keys(linesFor(lang).spark).sort(), base, `${lang}: spark keys differ`);
+    assert.deepEqual(Object.keys(linesFor(lang).trick).sort(), ['happy', 'startled'], `${lang}: trick keys differ`);
   }
 });

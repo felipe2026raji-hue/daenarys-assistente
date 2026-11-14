@@ -117,10 +117,13 @@ export class Capri {
     this.uplinkDue = false;
     this.pointing = null; // what she's showing you: { rect, aim, dir, side, reach, label, pointer }
     this.mouse = null; // last pointer position seen
+    this.clickTimer = 0; // a click waits a moment, in case a second one makes it a trick
 
     this.onMove = null;     // her head moved on screen
     this.onTeleport = null; // ('start' | 'end')
     this.onClick = null;
+    this.onDoubleClick = null; // (x, y): a trick
+    this.onScale = null;    // (scale): the wheel changed her size
     this.onMenu = null;   // right-click on her
     this.onGaze = null;
     this.onMode = null;   // (mode, previous)
@@ -571,6 +574,17 @@ export class Capri {
       return;
     }
 
+    // asleep: a Zzz drifting off her now and then
+    if (this.mode === 'sleep' && !this.dormant && !reducedMotion.matches
+      && now - (this.zzzAt || 0) > 3800) {
+      this.zzzAt = now;
+      const s = this.scale;
+      const h = this.head();
+      this.fx.puffs(h.x + 26 * s, h.y - 100 * s, {
+        kind: 'zzz', count: 1, spread: 8 * s, rise: 20 * s, life: 2600,
+      });
+    }
+
     if (this.stance === 'peek' && now > this.peekUntil) {
       this.unpeek();
       return;
@@ -643,7 +657,7 @@ export class Capri {
     } else if (this.stance === 'sit') {
       if (Math.random() < 0.3) this.lieDown();
       else this.perform(pick(['look', 'look', 'split', 'stretch']));
-    } else this.perform(pick(['spin', 'look', 'hop', 'curious', 'split']), this.towardCenter());
+    } else this.perform(pick(['dance', 'spin', 'look', 'hop', 'curious', 'split']), this.towardCenter());
   }
 
   // Bored on her ledge, she lies back on it: a little lean the other way, then she lets herself
@@ -783,9 +797,12 @@ export class Capri {
   }
 
   wake() {
-    if (this.mode === 'sleep') this.setMode('idle');
+    const slept = this.mode === 'sleep';
+    if (slept) this.setMode('idle');
     this.lastActivity = performance.now();
     if (this.dormant) this.rouse(); // down to her mask: she comes back
+    // up from a real nap: a yawn, if she's on her feet for it
+    else if (slept && this.stance === 'stand' && performance.now() - this.sleptAt > 60000) this.perform('yawn');
   }
 
   // Somewhere to be while Claude works: on the window in front if she can sit on it, else her corner.
@@ -1045,6 +1062,11 @@ export class Capri {
         break;
       case 'notice':
         this.twitch();
+        break;
+      case 'notes': // dancing: notes coming off her, in time
+        this.fx.puffs(h.x + rand(-30, 30) * s, h.y - 80 * s, {
+          kind: 'note', count: 2, spread: 34 * s, rise: 60 * s, life: 1500,
+        });
         break;
       case 'zap':
         if (this.zapAt) {
@@ -1848,6 +1870,24 @@ export class Capri {
       e.preventDefault();
       if (this.hit(e.clientX, e.clientY)) this.onMenu?.(); // right-click: her menu
     });
+    // the wheel over her: she grows or shrinks, and the size is kept in your settings
+    this.canvas.addEventListener('wheel', (e) => {
+      if (!this.hit(e.clientX, e.clientY)) return;
+      e.preventDefault();
+      const step = e.deltaY < 0 ? 0.05 : -0.05;
+      const next = Math.round(clamp(this.scale + step, 0.35, 1.1) * 100) / 100;
+      if (next === this.scale) return;
+      this.setScale(next);
+      this.onScale?.(next);
+    }, { passive: false });
+    // a second click right after the first: a trick, not another "what's going on"
+    this.canvas.addEventListener('dblclick', (e) => {
+      if (!this.hit(e.clientX, e.clientY)) return;
+      clearTimeout(this.clickTimer);
+      this.clickTimer = 0;
+      if (this.busy || this.dragging || this.stowed || this.dormant) return;
+      this.onDoubleClick?.(e.clientX, e.clientY);
+    });
     this.canvas.addEventListener('mousedown', (e) => {
       if (e.button !== 0 || !this.hit(e.clientX, e.clientY)) return;
       // thrown: you can catch her on the fly, or pick her up off the floor
@@ -1888,7 +1928,12 @@ export class Capri {
       down = null;
       this.dragging = false;
       if (!wasDragging) {
-        this.onClick?.();
+        // a click: wait a moment, so a second one can turn it into a trick instead
+        clearTimeout(this.clickTimer);
+        this.clickTimer = setTimeout(() => {
+          this.clickTimer = 0;
+          this.onClick?.();
+        }, 250);
         return;
       }
       tween(this.p, { glitch: 0, split: 0 }, 200, ease.out);
@@ -2587,7 +2632,7 @@ export class Capri {
     if (!free || y > this.head().y + 30 * s || !this.hit(x, y)) return;
     const pet = this.pet;
     if (!pet) {
-      this.pet = { x, dir: 0, run: 0, turns: 0, last: now, since: 0, purred: 0, end: 0 };
+      this.pet = { x, dir: 0, run: 0, turns: 0, last: now, since: 0, purred: 0, puffed: 0, end: 0 };
       return;
     }
     const dx = x - pet.x;
@@ -2621,6 +2666,14 @@ export class Capri {
     if (now - pet.purred > 1500) {
       pet.purred = now;
       this.voice.play('purr');
+    }
+    // hearts off her mane while you stroke her
+    if (now - pet.puffed > 900) {
+      pet.puffed = now;
+      const h = this.head();
+      this.fx.puffs(h.x + rand(-24, 24) * s, h.y - 90 * s, {
+        kind: 'heart', count: 2, spread: 26 * s, rise: 44 * s, life: 1000,
+      });
     }
     if (this.act?.player.name !== 'petted') this.perform('petted', x < this.pos.x ? -1 : 1);
   }
@@ -2657,6 +2710,13 @@ export class Capri {
     if (this.mode !== 'idle') return;
     // now and then she's a little menace about it
     if (Math.random() < 0.3 && this.zap(x, y)) return;
+    // a "?" over her head, now and then, when she cocks it at you
+    if (Math.random() < 0.45) {
+      const s = this.scale;
+      this.fx.puffs(h.x + 34 * s, h.y - 110 * s, {
+        kind: 'ask', count: 1, spread: 6 * s, rise: 24 * s, life: 1400,
+      });
+    }
     this.perform('curious', x < h.x ? -1 : 1);
   }
 }

@@ -635,6 +635,78 @@ export const ACTS = {
       [1, {}],
     ],
   },
+
+  // ---- gestures (app.js, capri.js) ----
+  // The cut-out has no limbs to move, so these are all whole-body: a lean, a squash, a bob.
+  // They read as dancing, bowing, yawning and nodding the way a paper puppet would.
+
+  // Dancing on her own: rocking from one side to the other, bouncing, the mane trailing the
+  // beat, and a flat spin on the last bar.
+  dance: {
+    priority: 1,
+    fps: 24,
+    keys: [
+      [2, { sy: 0.92, sx: 1.06, bob: 8, tilt: -5, head: 0.35, hair: -3.5 }, 'notes'],
+      [2, { sy: 1.07, sx: 0.94, bob: -16, tilt: 6, head: -0.25, hair: 3, smear: [0, -8] }],
+      ...rep(3, [
+        [2, { sy: 0.92, sx: 1.06, bob: 9, tilt: -6, head: 0.38, hair: -4 }],
+        [2, { sy: 1.07, sx: 0.94, bob: -17, tilt: 7, head: -0.28, hair: 3.5, smear: [0, -9] }],
+      ]),
+      // the spin: the flat drawing turns through a sliver and comes back
+      [1, { sx: 0.45, echo: [10, 0], bob: -10, tilt: 0, hair: 0 }],
+      [1, { sx: -0.45, echo: [14, 0], bob: -10, tilt: 0, hair: 0 }],
+      [1, { sx: -1, echo: [8, 0], bob: -6, tilt: -3, hair: -1 }],
+      [2, { sx: 1.06, sy: 0.94, tilt: 0, bob: 0, head: 0.12 }, 'notes'],
+      [1, {}],
+    ],
+  },
+
+  // A bow: chin up for a breath, then down from the waist and held, then up with an overshoot.
+  bow: {
+    priority: 2,
+    fps: 24,
+    keys: [
+      [2, { head: -0.6, tilt: -2, bob: -2 }],
+      [3, { head: 1.8, tilt: 7, bob: 4, sy: 0.98, sx: 1.02, smear: [0, 8] }],
+      [10, { head: 2.5, tilt: 8, bob: 6, sy: 0.97, sx: 1.03, hair: -1.5 }],
+      [2, { head: 2.6, tilt: 8.5, bob: 6.5, sy: 0.97, sx: 1.03 }],
+      [3, { head: 1.0, tilt: 4, bob: 2, sy: 1.01, sx: 0.99 }],
+      [2, { head: -0.25, tilt: -2, bob: -3, sy: 1.03, sx: 0.98 }],
+      [1, {}],
+    ],
+  },
+
+  // Waking up with a yawn: a breath in, she stretches tall with her head back and holds it,
+  // then slumps back down with a small shiver.
+  yawn: {
+    priority: 2,
+    fps: 24,
+    keys: [
+      [2, { head: 0.2, bob: 2, sy: 0.97, sx: 1.02 }],
+      [3, { head: -0.7, bob: -6, sy: 1.06, sx: 0.96, smear: [0, -6] }],
+      [5, { head: -1.6, bob: -12, sy: 1.14, sx: 0.9 }],
+      [12, { head: -1.7, bob: -13, sy: 1.15, sx: 0.89, hair: 2 }],
+      [1, { head: -0.7, bob: -4, sy: 1.03, sx: 0.98, smear: [0, 8] }, 'blip'],
+      [3, { head: 0.6, bob: 6, sy: 0.92, sx: 1.07 }],
+      [2, { head: 0.15, bob: 2, sy: 0.98, sx: 1.01 }],
+      [4, { head: 0.02, bob: 0 }],
+      [1, {}],
+    ],
+  },
+
+  // Yes: two nods, the whole drawing leaning in on each, and a small breath between them.
+  nod: {
+    priority: 1,
+    fps: 24,
+    keys: [
+      [1, { head: -0.25, bob: -3 }],
+      [2, { head: 1.15, bob: 3, sy: 0.98, sx: 1.02, smear: [0, 5] }],
+      [2, { head: 0.05, bob: -1 }],
+      [2, { head: 1.0, bob: 3, sy: 0.98, sx: 1.02 }],
+      [2, { head: 0.04, bob: 0 }],
+      [1, {}],
+    ],
+  },
 };
 
 export class Player {

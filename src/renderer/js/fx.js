@@ -14,6 +14,7 @@ export const COLORS = {
   violet: '#7b3dff',
   paper: '#fff4f6',
   blue: '#3d6bff',
+  pink: '#ff6fa5',
 };
 
 const SHARD_PALETTE = ['red', 'red', 'red', 'red', 'ink', 'ink', 'green', 'green', 'violet', 'paper'];
@@ -545,6 +546,25 @@ export class FxLayer {
     this.add({ type: 'dizzy', life, at, phase: rand(0, Math.PI * 2) });
   }
 
+  // Drawn signs floating off her: hearts when she's petted, Zzz as she dozes, a "?" when she
+  // doesn't follow, notes while she dances. Whole drawings, in her cel colours, rising and
+  // fading on twos. `kind`: heart | zzz | ask | note.
+  puffs(x, y, { kind = 'heart', count = 3, spread = 40, rise = 60, life = 1200 } = {}) {
+    for (let i = 0; i < count; i++) {
+      this.add({
+        type: 'puff',
+        life: life * rand(0.8, 1.2),
+        x: x + rand(-spread, spread),
+        y: y + rand(-spread * 0.4, spread * 0.4),
+        vx: rand(-18, 18),
+        vy: -rand(rise * 0.7, rise * 1.3),
+        size: rand(13, 19),
+        kind,
+        phase: rand(0, Math.PI * 2),
+      });
+    }
+  }
+
   // The edge of the screen torn open where she comes through it from the next screen: a black
   // slit with her red line in it, opening on the inside of the edge at x and closing behind her.
   rift(x, y, { h = 300, side = 1, life = 420 } = {}) {
@@ -901,6 +921,69 @@ export class FxLayer {
       ctx.fillStyle = core;
       ctx.fill();
     }
+  }
+
+  // A heart, a "?", a note or a Zzz, in her cel colours with the violet copy knocked out of
+  // register behind it, like everything else here. `s` is its size in px.
+  sign(kind, x, y, s) {
+    const { ctx } = this;
+    const fill = { heart: COLORS.pink, ask: COLORS.green, note: COLORS.paper, zzz: COLORS.violet }[kind] || COLORS.paper;
+    const heart = (cx, cy, r) => {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + r * 0.72);
+      ctx.bezierCurveTo(cx - r * 1.1, cy - r * 0.1, cx - r * 0.55, cy - r * 0.95, cx, cy - r * 0.3);
+      ctx.bezierCurveTo(cx + r * 0.55, cy - r * 0.95, cx + r * 1.1, cy - r * 0.1, cx, cy + r * 0.72);
+      ctx.closePath();
+      ctx.fill();
+    };
+    const ask = (cx, cy, r) => {
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.42, cy - r * 0.5);
+      ctx.bezierCurveTo(cx - r * 0.5, cy - r * 1.05, cx + r * 0.55, cy - r * 1.05, cx + r * 0.48, cy - r * 0.45);
+      ctx.bezierCurveTo(cx + r * 0.44, cy - r * 0.1, cx, cy - r * 0.08, cx, cy + r * 0.3);
+      ctx.lineWidth = Math.max(2, r * 0.26);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy + r * 0.72, r * 0.17, 0, Math.PI * 2);
+      ctx.fill();
+    };
+    const note = (cx, cy, r) => {
+      ctx.beginPath();
+      ctx.ellipse(cx - r * 0.32, cy + r * 0.58, r * 0.34, r * 0.25, -0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(cx, cy - r * 0.85, Math.max(2, r * 0.15), r * 1.5);
+      ctx.beginPath();
+      ctx.moveTo(cx + r * 0.15, cy - r * 0.85);
+      ctx.quadraticCurveTo(cx + r * 0.82, cy - r * 0.55, cx + r * 0.48, cy + r * 0.05);
+      ctx.quadraticCurveTo(cx + r * 0.58, cy - r * 0.45, cx + r * 0.15, cy - r * 0.5);
+      ctx.closePath();
+      ctx.fill();
+    };
+    const zee = (cx, cy, r) => {
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.5, cy - r * 0.5);
+      ctx.lineTo(cx + r * 0.5, cy - r * 0.5);
+      ctx.lineTo(cx - r * 0.5, cy + r * 0.5);
+      ctx.lineTo(cx + r * 0.5, cy + r * 0.5);
+      ctx.lineWidth = Math.max(2, r * 0.2);
+      ctx.stroke();
+    };
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'miter';
+    // three Zs climb away from her, each bigger than the last
+    const shape = (dx, dy, color) => {
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+      if (kind === 'zzz') {
+        for (let i = 0; i < 3; i++) zee(x + dx + i * s * 0.95, y + dy - i * s * 0.85, s * (0.62 + i * 0.26));
+      } else if (kind === 'heart') heart(x + dx, y + dy, s * 0.72);
+      else if (kind === 'ask') ask(x + dx, y + dy, s * 0.85);
+      else note(x + dx, y + dy, s * 0.72);
+    };
+    shape(2, 2, COLORS.violet);
+    shape(0, 0, fill);
+    ctx.restore();
   }
 
   eye(x, y, R, open, look) {
@@ -1535,6 +1618,20 @@ export class FxLayer {
           const size = ((step + i) % 2 ? 8 : 12) * (Math.sin(a) > 0 ? 1.15 : 0.8);
           this.sparkle(Math.round(x), Math.round(y), size, i === 1 ? COLORS.paper : COLORS.green, i === 1 ? null : COLORS.ink);
         }
+        ctx.restore();
+        break;
+      }
+      case 'puff': {
+        it.x += it.vx * dt;
+        it.y += it.vy * dt;
+        it.vy *= 0.985;
+        const fade = t < 0.12 ? t / 0.12 : t > 0.72 ? 1 - (t - 0.72) / 0.28 : 1;
+        const step = Math.floor((now - it.born) / (FRAME_MS * 2)); // on twos
+        const size = it.size * (0.7 + 0.3 * Math.min(1, t * 4));
+        const wobble = Math.sin(it.phase + step * 0.7) * 3;
+        ctx.save();
+        ctx.globalAlpha = clamp(fade, 0, 1);
+        this.sign(it.kind, Math.round(it.x + wobble), Math.round(it.y), size);
         ctx.restore();
         break;
       }

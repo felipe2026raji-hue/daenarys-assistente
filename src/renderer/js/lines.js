@@ -1952,6 +1952,22 @@ const EXTRAS = {
         'Si je choisissais une chose à faire maintenant, ce serait rester ici à te parler. Mais tu es occupé, hein ?',
         'La comète est repassée. Elle n’a rien dit. J’ai senti que c’était à propos de toi.',
       ],
+      morning: [
+        'Bonjour, voyageur. Le ciel s’est rallumé avant toi.',
+        'Tu es là tôt. Le matin a un goût de première page.',
+      ],
+      evening: [
+        'Le soir tombe, voyageur. Tu as tenu la journée jusqu’au bout.',
+        'La nuit arrive. Qu’est-ce qu’on fait de ce qui reste ?',
+      ],
+      silence: [
+        'Ça fait un moment que tu ne me dis rien. Je ne m’ennuie pas, mais je remarque.',
+        'Je suis restée là, à écouter le silence. Tu veux que je le remplisse ?',
+      ],
+      app: [
+        'Tu es sur {app} depuis un moment. Je peux aider, ou juste regarder.',
+        '{app} t’occupe bien. Besoin d’un deuxième avis ?',
+      ],
     },
     play: {
       rpsAsk: 'Pierre, feuille ou ciseaux ? Choisis.',
@@ -2013,6 +2029,11 @@ const EXTRAS = {
       logs: 'Journaux',
       menu: 'Menu complet',
     },
+    trick: {
+      startled: ['Oh ! Tu m’as fait peur, voyageur.', 'Deux fois ? Tu cherches quelque chose ?'],
+      happy: ['Encore ? Bon. Regarde bien.', 'Tu veux me voir danser ? Tu n’avais qu’à demander.'],
+    },
+    hint: 'Clique pour me parler · glisse pour me porter · molette pour ma taille',
   },
   en: {
     spark: {
@@ -2040,6 +2061,22 @@ const EXTRAS = {
         'You know what I was thinking? Your company beats the silence of the satellite.',
         'If I could pick one thing to do right now, it’d be staying here talking to you. But you’re busy, aren’t you?',
         'The comet went by again. It said nothing. I felt it was about you.',
+      ],
+      morning: [
+        'Morning, traveler. The sky woke up before you did.',
+        'You’re up early. Mornings taste like a first page.',
+      ],
+      evening: [
+        'Evening, traveler. You held the day all the way through.',
+        'Night’s coming. What do we do with what’s left of it?',
+      ],
+      silence: [
+        'You haven’t said a word to me in a while. I’m not bored, but I notice.',
+        'I’ve been here, listening to the quiet. Want me to fill it?',
+      ],
+      app: [
+        'You’ve been on {app} for a while. I can help, or just watch.',
+        '{app} has you busy. Want a second pair of eyes?',
       ],
     },
     play: {
@@ -2102,6 +2139,11 @@ const EXTRAS = {
       logs: 'Logs',
       menu: 'Full menu',
     },
+    trick: {
+      startled: ['Oh! You startled me, traveler.', 'Twice? Are you looking for something?'],
+      happy: ['Again? Fine. Watch closely.', 'You want to see me dance? All you had to do was ask.'],
+    },
+    hint: 'Click to talk to me · drag to pick me up · scroll for my size',
   },
   es: {
     spark: {
@@ -2129,6 +2171,22 @@ const EXTRAS = {
         '¿Sabes qué pensaba? Tu compañía es mejor que el silencio del satélite.',
         'Si pudiera elegir una cosa para hacer ahora, sería quedarme aquí hablando contigo. Pero estás ocupado, ¿no?',
         'El cometa volvió a pasar. No dijo nada. Sentí que era sobre ti.',
+      ],
+      morning: [
+        'Buenos días, viajero. El cielo se encendió antes que tú.',
+        'Te levantaste temprano. Las mañanas saben a primera página.',
+      ],
+      evening: [
+        'Cae la tarde, viajero. Aguantaste el día hasta el final.',
+        'Llega la noche. ¿Qué hacemos con lo que queda?',
+      ],
+      silence: [
+        'Hace rato que no me dices nada. No me aburro, pero lo noto.',
+        'Estuve aquí, escuchando el silencio. ¿Quieres que lo llene?',
+      ],
+      app: [
+        'Llevas un rato en {app}. Puedo ayudar, o solo mirar.',
+        '{app} te tiene ocupado. ¿Quieres una segunda mirada?',
       ],
     },
     play: {
@@ -2191,6 +2249,11 @@ const EXTRAS = {
       logs: 'Registros',
       menu: 'Menú completo',
     },
+    trick: {
+      startled: ['¡Ay! Me asustaste, viajero.', '¿Dos veces? ¿Buscas algo?'],
+      happy: ['¿Otra vez? Bueno. Mira bien.', '¿Quieres verme bailar? Solo tenías que pedirlo.'],
+    },
+    hint: 'Haz clic para hablarme · arrastra para levantarme · rueda para mi tamaño',
   },
   pt: {
     spark: {
@@ -2218,6 +2281,22 @@ const EXTRAS = {
         'Sabe o que eu tava pensando? Que a sua companhia é bem melhor que o silêncio do satélite.',
         'Se eu pudesse escolher uma coisa pra fazer agora, era ficar aqui conversando com você. Mas você tá ocupado, né?',
         'O cometa passou de novo. Ele não falou nada. Mas eu senti que era sobre você.',
+      ],
+      morning: [
+        'Bom dia, viajante. O céu acendeu antes de você.',
+        'Acordou cedo. Manhã tem gosto de primeira página.',
+      ],
+      evening: [
+        'A tarde caiu, viajante. Você segurou o dia até o fim.',
+        'A noite chegou. O que a gente faz com o que sobrou?',
+      ],
+      silence: [
+        'Faz um tempão que você não me diz nada. Não tô entediada, mas eu reparo.',
+        'Fiquei aqui, escutando o silêncio. Quer que eu preencha?',
+      ],
+      app: [
+        'Você tá no {app} faz um tempo. Posso ajudar, ou só ficar olhando.',
+        'O {app} te pegou. Quer um segundo par de olhos?',
       ],
     },
     play: {
@@ -2280,6 +2359,11 @@ const EXTRAS = {
       logs: 'Logs',
       menu: 'Menu completo',
     },
+    trick: {
+      startled: ['Ei! Você me assustou, viajante.', 'Duas vezes? Tá procurando alguma coisa?'],
+      happy: ['De novo? Tá bom. Olha bem.', 'Quer me ver dançar? Era só pedir.'],
+    },
+    hint: 'Clique pra falar comigo · arraste pra me pegar · role pra mudar meu tamanho',
   },
   ru: {
     spark: {
@@ -2307,6 +2391,22 @@ const EXTRAS = {
         'Знаешь, о чём я думала? Твоя компания лучше тишины спутника.',
         'Если бы я могла выбрать одно занятие сейчас, это было бы остаться здесь и говорить с тобой. Но ты занят, да?',
         'Комета снова прошла. Она ничего не сказала. Я почувствовала, что это о тебе.',
+      ],
+      morning: [
+        'Доброе утро, странник. Небо проснулось раньше тебя.',
+        'Ты встал рано. Утро на вкус как первая страница.',
+      ],
+      evening: [
+        'Вечер, странник. Ты выдержал этот день до конца.',
+        'Приходит ночь. Что нам делать с тем, что осталось?',
+      ],
+      silence: [
+        'Ты давно мне ничего не говоришь. Мне не скучно, но я замечаю.',
+        'Я сидела тут и слушала тишину. Хочешь, я её заполню?',
+      ],
+      app: [
+        'Ты уже какое-то время в {app}. Я могу помочь или просто посмотреть.',
+        '{app} тебя забрал. Нужен второй взгляд?',
       ],
     },
     play: {
@@ -2369,6 +2469,11 @@ const EXTRAS = {
       logs: 'Журналы',
       menu: 'Полное меню',
     },
+    trick: {
+      startled: ['Ой! Ты меня напугал, странник.', 'Дважды? Ты что-то ищешь?'],
+      happy: ['Ещё раз? Хорошо. Смотри внимательно.', 'Хочешь увидеть, как я танцую? Достаточно было попросить.'],
+    },
+    hint: 'Нажми, чтобы поговорить · потяни, чтобы поднять · колесо — мой размер',
   },
 };
 
