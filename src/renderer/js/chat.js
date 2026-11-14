@@ -365,7 +365,9 @@ export class Chat {
   }
 
   // `quiet`: abre sem falar a saudação (quando o microfone já vai gravar, para não se ouvir)
-  async start({ quiet = false } = {}) {
+  // `opening`: a line she already said out there (a question she asked you), kept as hers so her
+  // answer carries on from it.
+  async start({ quiet = false, opening = null } = {}) {
     const { capri, host, t } = this;
     if (this.open) {
       this.panel.chatInput.focus();
@@ -417,8 +419,8 @@ export class Chat {
     // angry, sulking, dizzy…: she greets you the way she feels, and her model is told she did
     const feeling = this.bond?.feeling;
     const moody = !tiny && feeling && t.moody[feeling];
-    const hello = moody ? fmt(pick(moody), this.bond.mood.vars) : pick(this.history.length ? t.again : t.hello);
-    this.opening = moody ? hello : null;
+    const hello = opening || (moody ? fmt(pick(moody), this.bond.mood.vars) : pick(this.history.length ? t.again : t.hello));
+    this.opening = opening || (moody ? hello : null);
     host.focusOverlay(true); // the keyboard, for typing to her
     const shown = this.panel.say({
       kind: 'chat',

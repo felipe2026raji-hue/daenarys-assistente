@@ -23,7 +23,7 @@ const VISIBLE = new Set(['head', 'hair', 'tilt', 'bob', 'sx', 'sy', 'smear', 'ec
 
 test('her new gestures are whole acts, drawn with what the sprite can move', async () => {
   const { ACTS } = await actingModule();
-  for (const name of ['dance', 'bow', 'yawn', 'nod']) {
+  for (const name of ['dance', 'bow', 'yawn', 'nod', 'swat', 'evade', 'giggle', 'ponder', 'sneeze']) {
     const act = ACTS[name];
     assert.ok(act, `${name}: missing from ACTS`);
     assert.ok(Array.isArray(act.keys) && act.keys.length >= 4, `${name}: too few drawings`);
@@ -45,4 +45,21 @@ test('every act holds for a while, and a player samples it', async () => {
     assert.ok(player.total > 0, `${name}: no frames`);
     assert.ok(player.sample(player.start)?.pose, `${name}: nothing at the start`);
   }
+});
+
+test('an act with a sheet gives one cel per drawing, ready for the frame-by-frame art', async () => {
+  const { ACTS, Player } = await actingModule();
+  const act = ACTS.nod;
+  const before = act.sheet;
+  act.sheet = { cols: 4, from: 2 };
+  try {
+    const player = new Player('nod');
+    assert.deepEqual(player.sheetFrame(player.start), { cols: 4, from: 2, frame: 2 });
+    // the second drawing (the first is held for one frame at 24 fps)
+    assert.equal(player.sheetFrame(player.start + 1000 / 24 * 1.5).frame, 3);
+  } finally {
+    if (before === undefined) delete act.sheet;
+    else act.sheet = before;
+  }
+  assert.equal(new Player('nod').sheetFrame(performance.now()), null);
 });

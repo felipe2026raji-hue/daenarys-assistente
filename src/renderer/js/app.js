@@ -348,7 +348,8 @@ async function boot() {
   spark.start();
 
   // Clicking her: what's going on, or she offers to talk. Sulking, she turns her back on you.
-  // About to close one of your other AIs' pages, she leaves it.
+  // About to close one of your other AIs' pages, she leaves it. If she just asked you something,
+  // a click takes you to her chat to answer it.
   capri.onClick = () => {
     hideHint();
     spark.markTalk();
@@ -357,8 +358,13 @@ async function boot() {
       return;
     }
     if (jealousy.spare()) return;
+    const ask = panel.visible ? panel.current?.ask : null; // a question of hers, still up
     if (panel.visible) panel.hide();
-    else if (!jealousy.onClick()) {
+    if (ask) {
+      chat.start({ quiet: true, opening: ask });
+      return;
+    }
+    if (!jealousy.onClick()) {
       capri.perform('nod');
       brain.status();
       bond.add('click', 1);
@@ -435,6 +441,11 @@ async function boot() {
     capri.refuseUntil = 0;
   };
   capri.onDodge = () => panel.say({ kind: 'info', face: 'smug', line: pick(brain.t.thrown.dodge), hold: 2500 });
+  // grabbed once too often and she slipped away: a hop of laughter, and a word about it
+  capri.onDuck = () => {
+    spark.markTalk();
+    if (!panel.visible) panel.say({ kind: 'info', face: 'laugh', line: pick(brain.t.play.dodge), hold: 2600 });
+  };
 
   // Petted (your pointer back and forth over her mane): she purrs, says something now and then
   // (shy before she's attached to you), and it brings you a little closer. Too long and she's had
@@ -644,11 +655,31 @@ async function boot() {
   window.dev = { capri, brain, panel, chat, speech, guide, fx, voice, bond, jealousy, reminders, look, pc, play, spark, setup, settings, screens: () => screens };
 
   host.onClaudeEvent((evt) => brain.handle(evt));
+  // You switched to another window: she turns her head that way now and then, when nothing else
+  // is going on. Not while she's showing you something, or busy with an act of her own.
+  let lastFg = 0;
+  let glanceAt = 0;
+  const glance = (data) => {
+    const fg = data?.fg || 0;
+    if (!fg || fg === lastFg) return;
+    lastFg = fg;
+    if (config.pcReact === false || panel.visible) return;
+    if (capri.stowed || capri.dormant || capri.busy || capri.dragging) return;
+    if (capri.stance !== 'stand' || capri.mode !== 'idle' || capri.act) return;
+    const now = performance.now();
+    if (now < glanceAt) return;
+    glanceAt = now + 9000;
+    const win = data.wins?.find((w) => w.id === fg);
+    const x = win ? win.x + win.w / 2 : capri.pos.x;
+    capri.perform('curious', x < capri.pos.x ? -1 : 1);
+  };
   host.onWindows((data) => {
     capri.setWindows(data);
     brain.onWindows(data);
     jealousy.onWindows(data);
     pc.onWindows(data);
+    spark.onWindows(data);
+    glance(data);
   });
   // the windows as they are now: the watcher only speaks again when something changes
   host.windowsNow().then((data) => data && capri.setWindows(data));

@@ -42,6 +42,10 @@ const LYING_ACTS = new Set(['talk', 'look', 'split', 'petted']);
 const STROKE = 22;
 const PET_GAP = 700;
 const PET_ENOUGH = 8000;
+// A pointer whipping past her head (px/s, and how near it has to come, at her full size): she
+// swipes at it now and then, never twice in a row.
+const SWAT_SPEED = 1500;
+const SWAT_NEAR = 170;
 
 const UPLINK_DAY = 'capri.uplinkDay'; // the last day she sent the red light up
 
@@ -117,7 +121,10 @@ export class Capri {
     this.uplinkDue = false;
     this.pointing = null; // what she's showing you: { rect, aim, dir, side, reach, label, pointer }
     this.mouse = null; // last pointer position seen
+    this.mouseAt = null; // where it was a moment before, to know how fast it goes
     this.clickTimer = 0; // a click waits a moment, in case a second one makes it a trick
+    this.nextSwat = 0;   // a pointer whipping past her head: she won't swipe again before then
+    this.nextDuck = 0;   // grabbed once too often: she won't slip away again before then
 
     this.onMove = null;     // her head moved on screen
     this.onTeleport = null; // ('start' | 'end')
@@ -132,6 +139,7 @@ export class Capri {
     this.chipAt = null;   // () => the biochip's middle on screen
     this.onDoze = null;   // ('start', face) | 'waking' | 'end': down to her mask and back
     this.onThrown = null; // ({ how: 'ko' | 'feet' | 'ledge' | 'leap', hard, hits }) once she's back to herself
+    this.onDuck = null;   // she slipped out from under your hand
     this.onDodge = null;  // she got away from your pointer instead of letting you pick her up
     this.canCross = null; // (side, y) => is there another screen past that side's edge, at that height
     this.onCross = null;  // async (side, at) => moves her window over to it: { y } there, or null
@@ -1068,6 +1076,27 @@ export class Capri {
           kind: 'note', count: 2, spread: 34 * s, rise: 60 * s, life: 1500,
         });
         break;
+      case 'swat': { // the swipe: claw-marks of light where her hand went
+        const dir = this.act?.player.dir || 1;
+        this.fx.slices(h.x + dir * 26 * s, h.y - 10 * s, 110 * s, 80 * s, { count: 3 });
+        this.voice.play('tick', { soft: true });
+        break;
+      }
+      case 'think': // a "?" over her head while she thinks it over
+        this.fx.puffs(h.x + 30 * s, h.y - 112 * s, {
+          kind: 'ask', count: 1, spread: 6 * s, rise: 24 * s, life: 1600,
+        });
+        break;
+      case 'giggle': // laughter, coming off her in little notes
+        this.fx.puffs(h.x + rand(-18, 18) * s, h.y - 96 * s, {
+          kind: 'note', count: 2, spread: 26 * s, rise: 42 * s, life: 1100,
+        });
+        this.voice.play('purr', { soft: true });
+        break;
+      case 'sneeze': // dust off her, and a shiver
+        this.fx.burst(h.x, h.y + 20 * s, { count: 10, power: 0.45, spread: 46 * s });
+        this.voice.play('blip');
+        break;
       case 'zap':
         if (this.zapAt) {
           const { x, y, side } = this.zapAt;
@@ -1897,6 +1926,7 @@ export class Capri {
         this.dodge(); // thrown around once too often: not again
         return;
       }
+      if (!thrown && this.maybeDuck(e.clientX, e.clientY)) return; // she slips out from under your hand
       down = { x: e.clientX, y: e.clientY, pos: { ...this.pos }, at: this.spritePoint(e.clientX, e.clientY) };
       this.track = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
       if (thrown) this.pickUp(down);
@@ -1917,7 +1947,16 @@ export class Capri {
           this.p.glitchSeed = Math.random() * 100;
           this.place();
         }
+        this.mouseAt = null; // holding her: how fast the pointer goes is the throw's business
         return;
+      }
+      // how fast it's going, for a pointer that whips past her head
+      const now = performance.now();
+      const before = this.mouseAt;
+      this.mouseAt = { x: e.clientX, y: e.clientY, t: now };
+      if (before) {
+        const dt = Math.max(12, now - before.t);
+        this.maybeSwat(e.clientX, e.clientY, Math.hypot(e.clientX - before.x, e.clientY - before.y) / dt * 1000);
       }
       this.stroke(e.clientX, e.clientY);
       this.notice(e.clientX, e.clientY);
@@ -1957,6 +1996,64 @@ export class Capri {
     const a = pts[0], b = pts.at(-1);
     const dt = Math.max(0.012, (b.t - a.t) / 1000);
     return { x: (b.x - a.x) / dt, y: (b.y - a.y) / dt };
+  }
+
+  // A pointer whipping past her head: she swipes at it, now and then. Only when she's standing
+  // there with nothing else to do, so it never cuts into an act that matters.
+  maybeSwat(x, y, speed) {
+    if (speed < SWAT_SPEED) return;
+    const now = performance.now();
+    if (now < this.nextSwat) return;
+    if (this.busy || this.dragging || this.hidden || this.stowed || this.dormant) return;
+    if (this.stance !== 'stand' || this.mode === 'sleep' || this.lounge || this.sky) return;
+    // being petted right now: let her enjoy it (a hand merely passing over her mane is fine)
+    if (this.pet?.since || this.act?.player.name === 'petted') return;
+    const h = this.head();
+    if (Math.hypot(x - h.x, y - h.y) > SWAT_NEAR * this.scale + 40) return;
+    this.nextSwat = now + rand(6000, 11000);
+    this.perform('swat', x < h.x ? -1 : 1);
+  }
+
+  // Grabbed once too often, and now and then she slips out from under your hand: a duck to the
+  // side, her feet sliding with it, and a hop of laughter after.
+  maybeDuck(x) {
+    const now = performance.now();
+    if (this.fondness < 3 || now < this.nextDuck) return false;
+    if (this.dragging || this.hidden || this.stowed || this.dormant) return false;
+    if (this.stance !== 'stand' || this.mode === 'sleep' || this.lounge || this.sky) return false;
+    if (Math.random() > 0.3) return false;
+    this.nextDuck = now + rand(35000, 60000);
+    const away = x < this.pos.x ? 1 : -1; // the side away from your hand
+    this.voice.play('tick', { soft: true });
+    const evaded = this.perform('evade', away);
+    this.glide(away * 130 * this.scale, 240);
+    evaded.then(() => {
+      if (!this.act && this.stance === 'stand') this.perform('giggle');
+    });
+    this.onDuck?.();
+    return true;
+  }
+
+  // Her feet sliding sideways, drawing by drawing (the act over it is the duck).
+  async glide(dx, ms) {
+    const from = this.pos.x;
+    const to = clamp(from + dx, 70, this.view.w - 70);
+    if (reducedMotion.matches) {
+      this.pos.x = to;
+      this.place();
+      return;
+    }
+    const start = performance.now();
+    await new Promise((done) => {
+      const step = () => {
+        const t = Math.min(1, (performance.now() - start) / ms);
+        this.pos.x = lerp(from, to, ease.out(t));
+        this.place();
+        if (t < 1) requestAnimationFrame(step);
+        else done();
+      };
+      requestAnimationFrame(step);
+    });
   }
 
   // Picked up, or caught in the air: she hangs from the point you hold her by, turned as she was.

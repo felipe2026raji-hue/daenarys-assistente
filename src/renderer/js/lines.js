@@ -1968,6 +1968,21 @@ const EXTRAS = {
         'Tu es sur {app} depuis un moment. Je peux aider, ou juste regarder.',
         '{app} t’occupe bien. Besoin d’un deuxième avis ?',
       ],
+      appLong: [
+        'Tu es sur la même fenêtre depuis des heures. Tu construis un royaume, ou tu t’y perds ?',
+        'Deux heures au même endroit, voyageur. Même les tours ont besoin qu’on sorte un peu.',
+      ],
+      music: [
+        '{app} est ouvert. Je peux écouter aussi, ou te laisser danser seul.',
+        'Il y a de la musique qui sort de {app}. Ça te va, ou je change l’air ?',
+      ],
+      ask: [
+        'Dis-moi : qu’est-ce qui t’occupe le plus en ce moment ?',
+        'Une question, voyageur : qu’est-ce que tu ferais avec une journée à toi ?',
+        'Tu as déjà eu l’impression que certains jours filent plus vite que d’autres ?',
+      ],
+      askTell: 'Je te raconte',
+      askLater: 'Plus tard',
     },
     play: {
       rpsAsk: 'Pierre, feuille ou ciseaux ? Choisis.',
@@ -1989,6 +2004,11 @@ const EXTRAS = {
       guessHigh: 'Trop haut. Descends.',
       guessLow: 'Trop bas. Monte un peu.',
       guessWin: 'C’est {n}. Trouvé. La comète a aimé.',
+      dodge: [
+        'Raté ! Tu es trop lent, voyageur.',
+        'Non, non. Celle-là, je la garde pour moi.',
+        'Tu croyais m’attraper ? Le voile est de mon côté.',
+      ],
     },
     settings: {
       title: 'Réglages',
@@ -2078,6 +2098,21 @@ const EXTRAS = {
         'You’ve been on {app} for a while. I can help, or just watch.',
         '{app} has you busy. Want a second pair of eyes?',
       ],
+      appLong: [
+        'Same window for hours now. Are you building a kingdom, or hiding in one?',
+        'Two hours in the same place, traveler. Even towers need someone to step outside.',
+      ],
+      music: [
+        '{app} is open. Want me to listen with you, or leave you to it?',
+        'Music coming out of {app}. Is this one yours, or should I change the tune?',
+      ],
+      ask: [
+        'Tell me — what’s taking most of your head these days?',
+        'A question, traveler: what would you do with a day that was only yours?',
+        'Do some days feel like they run faster than others to you?',
+      ],
+      askTell: 'Tell me',
+      askLater: 'Later',
     },
     play: {
       rpsAsk: 'Rock, paper or scissors? Pick one.',
@@ -2099,6 +2134,11 @@ const EXTRAS = {
       guessHigh: 'Too high. Try lower.',
       guessLow: 'Too low. Come up a little.',
       guessWin: 'It’s {n}. You got it. The comet liked that.',
+      dodge: [
+        'Missed! Too slow, traveler.',
+        'No, no. That one I’m keeping.',
+        'You thought you had me? The veil is on my side.',
+      ],
     },
     settings: {
       title: 'Settings',
@@ -2188,6 +2228,21 @@ const EXTRAS = {
         'Llevas un rato en {app}. Puedo ayudar, o solo mirar.',
         '{app} te tiene ocupado. ¿Quieres una segunda mirada?',
       ],
+      appLong: [
+        'Llevas horas en la misma ventana. ¿Estás construyendo un reino o escondiéndote en uno?',
+        'Dos horas en el mismo sitio, viajero. Hasta las torres necesitan que alguien salga a mirar.',
+      ],
+      music: [
+        '{app} está abierto. ¿Escucho contigo o te dejo bailar solo?',
+        'Sale música de {app}. ¿Te sirve, o te cambio el aire?',
+      ],
+      ask: [
+        'Dime: ¿qué es lo que más te ocupa la cabeza ahora?',
+        'Una pregunta, viajero: ¿qué harías con un día solo tuyo?',
+        '¿Hay días que se te pasan más rápido que otros?',
+      ],
+      askTell: 'Cuéntame',
+      askLater: 'Luego',
     },
     play: {
       rpsAsk: '¿Piedra, papel o tijera? Elige.',
@@ -2209,6 +2264,11 @@ const EXTRAS = {
       guessHigh: 'Muy alto. Baja.',
       guessLow: 'Muy bajo. Sube un poco.',
       guessWin: 'Es {n}. Acertaste. Al cometa le gustó.',
+      dodge: [
+        '¡Fallaste! Muy lento, viajero.',
+        'No, no. Esa me la quedo.',
+        '¿Creías que me tenías? El velo está de mi lado.',
+      ],
     },
     settings: {
       title: 'Ajustes',
@@ -2298,6 +2358,21 @@ const EXTRAS = {
         'Você tá no {app} faz um tempo. Posso ajudar, ou só ficar olhando.',
         'O {app} te pegou. Quer um segundo par de olhos?',
       ],
+      appLong: [
+        'Faz horas que você está na mesma janela. Está construindo um reino ou se escondendo num?',
+        'Duas horas no mesmo lugar, viajante. Até as torres precisam de alguém que saia pra olhar.',
+      ],
+      music: [
+        '{app} está aberto. Escuto junto ou te deixo dançar sozinho?',
+        'Tem música saindo do {app}. Tá bom assim, ou troco o ar?',
+      ],
+      ask: [
+        'Me conta: o que mais ocupa a sua cabeça agora?',
+        'Uma pergunta, viajante: o que você faria com um dia só seu?',
+        'Tem dias que passam mais rápido que outros pra você?',
+      ],
+      askTell: 'Me conta',
+      askLater: 'Depois',
     },
     play: {
       rpsAsk: 'Pedra, papel ou tesoura? Escolhe.',
@@ -2319,6 +2394,11 @@ const EXTRAS = {
       guessHigh: 'Alto demais. Tenta mais baixo.',
       guessLow: 'Baixo demais. Sobe um pouco.',
       guessWin: 'É {n}. Acertou. O cometa gostou.',
+      dodge: [
+        'Errou! Devagar demais, viajante.',
+        'Não, não. Essa eu fico.',
+        'Achou que tinha me pego? O véu está do meu lado.',
+      ],
     },
     settings: {
       title: 'Ajustes',
@@ -2408,6 +2488,21 @@ const EXTRAS = {
         'Ты уже какое-то время в {app}. Я могу помочь или просто посмотреть.',
         '{app} тебя забрал. Нужен второй взгляд?',
       ],
+      appLong: [
+        'Ты в одном окне уже который час. Строишь королевство или прячешься в нём?',
+        'Два часа на одном месте, странник. Даже башням нужен кто-то, кто выйдет взглянуть.',
+      ],
+      music: [
+        '{app} открыт. Мне слушать с тобой или оставить тебя танцевать одного?',
+        'Из {app} идёт музыка. Так и надо, или мне сменить воздух?',
+      ],
+      ask: [
+        'Скажи: что сейчас занимает твою голову больше всего?',
+        'Вопрос, странник: что бы ты сделал с днём, который только твой?',
+        'Тебе кажется, что некоторые дни летят быстрее других?',
+      ],
+      askTell: 'Расскажи',
+      askLater: 'Потом',
     },
     play: {
       rpsAsk: 'Камень, ножницы или бумага? Выбирай.',
@@ -2429,6 +2524,11 @@ const EXTRAS = {
       guessHigh: 'Слишком много. Ниже.',
       guessLow: 'Слишком мало. Чуть выше.',
       guessWin: 'Это {n}. Угадал. Комете понравилось.',
+      dodge: [
+        'Мимо! Слишком медленно, странник.',
+        'Нет, нет. Эту я оставлю себе.',
+        'Думал, что поймал? Вуаль на моей стороне.',
+      ],
     },
     settings: {
       title: 'Настройки',

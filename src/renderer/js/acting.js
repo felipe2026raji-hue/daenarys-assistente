@@ -16,6 +16,10 @@
 //
 // A key can carry a cue as third item: capri.js fires effects and sounds when it's reached.
 // Directional acts are drawn leaning to screen-right; played with dir -1 they're mirrored.
+//
+// An act can also carry `sheet: { cols, from = 0, step = 1 }`: the hand-drawn, frame-by-frame
+// sheet it will be played from once that art exists, one cel per drawing (Player.sheetFrame).
+// Until then the cut-out draws the same drawings from the pose fields above.
 
 export const SHEET_FPS = 12;
 
@@ -707,6 +711,88 @@ export const ACTS = {
       [1, {}],
     ],
   },
+
+  // A pointer whipping past her head: she pulls back a breath, then swipes at it — the whole
+  // drawing snaps that way, mane trailing behind — and settles, pleased with herself.
+  swat: {
+    priority: 2,
+    fps: 24,
+    directional: true,
+    keys: [
+      [1, { head: -1.0, tilt: -4, hair: 5, bob: 2, smear: [9, 0] }],
+      [2, { head: 2.1, tilt: 10, hair: -7, bob: -5, sy: 1.05, sx: 0.95, smear: [-15, 0] }, 'swat'],
+      [3, { head: 2.4, tilt: 11, hair: -4, bob: -4, sy: 1.02, sx: 0.98 }],
+      [2, { head: 0.8, tilt: 4, hair: 3, bob: 2 }],
+      [2, { head: 0.15, tilt: 0.6, hair: 0 }],
+      [1, {}],
+    ],
+  },
+
+  // Grabbed once too often: she ducks out from under your hand, sliding away on her feet, and
+  // comes back up laughing.
+  evade: {
+    priority: 2,
+    fps: 24,
+    directional: true,
+    keys: [
+      [1, { head: -0.5, bob: -2, sx: 0.98, sy: 1.02 }],
+      [2, { head: 1.2, bob: 6, sy: 0.84, sx: 1.12, tilt: 8, hair: 6, smear: [0, 10] }],
+      [5, { head: 1.4, bob: 8, sy: 0.82, sx: 1.14, tilt: 9, hair: 4 }],
+      [2, { head: -0.3, bob: -6, sy: 1.07, sx: 0.94, tilt: -3, hair: -2 }],
+      [2, { head: 0.2, bob: 1, sy: 0.99, sx: 1.01, tilt: 0.5 }],
+      [1, {}],
+    ],
+  },
+
+  // Laughing: her shoulders shake on the beat, then a small hop she can't help.
+  giggle: {
+    priority: 1,
+    fps: 24,
+    keys: [
+      [1, { head: 0.55, bob: 3, sy: 0.97, sx: 1.03, hair: -2 }],
+      ...rep(3, [
+        [1, { head: 0.1, bob: -5, sy: 1.04, sx: 0.97, hair: 2 }],
+        [1, { head: 0.6, bob: 4, sy: 0.95, sx: 1.05, hair: -2.5 }],
+      ]),
+      [2, { head: -0.4, bob: -13, sy: 1.07, sx: 0.94, hair: 4, smear: [0, -9] }, 'giggle'],
+      [2, { head: 0.25, bob: 2, sy: 0.98, sx: 1.02, hair: -1 }],
+      [1, {}],
+    ],
+  },
+
+  // Thinking it over: her head tips to one side, she leans back a little and holds it, then a
+  // small double-take before she comes back.
+  ponder: {
+    priority: 1,
+    fps: 24,
+    directional: true,
+    keys: [
+      [2, { head: -0.7, tilt: -2.5, hair: 2 }],
+      [3, { head: 1.1, tilt: 4.5, hair: -2, sy: 0.99, sx: 1.01 }, 'think'],
+      [14, { head: 1.3, tilt: 5.5, hair: -1.5, bob: 1 }],
+      [2, { head: 0.8, tilt: 3, hair: -0.5 }],
+      [3, { head: 1.4, tilt: 5.2, hair: -1.2, bob: 1 }],
+      [2, { head: 0.3, tilt: 1 }],
+      [1, {}],
+    ],
+  },
+
+  // A sneeze: her head goes back and back, holds a breath — then snaps forward, the whole
+  // drawing squashed with it, and she shakes it off.
+  sneeze: {
+    priority: 2,
+    fps: 24,
+    keys: [
+      [2, { head: -0.6, bob: 1, sy: 0.99, sx: 1.01 }],
+      [3, { head: -1.6, bob: -6, sy: 1.06, sx: 0.95, hair: 4 }],
+      [2, { head: -2.0, bob: -8, sy: 1.08, sx: 0.94, hair: 3 }],
+      [1, { head: 2.3, tilt: 7, bob: 11, sy: 0.82, sx: 1.16, hair: -7, smear: [0, 15] }, 'sneeze'],
+      [4, { head: 2.0, tilt: 6, bob: 10, sy: 0.86, sx: 1.12, hair: -4 }],
+      [2, { head: 0.5, tilt: 1.5, bob: 1, sy: 0.98, sx: 1.02, hair: 1 }],
+      [2, { head: -0.1, bob: 0 }],
+      [1, {}],
+    ],
+  },
 };
 
 export class Player {
@@ -738,6 +824,16 @@ export class Player {
       f -= hold;
     }
     return null;
+  }
+
+  // The cel of this act's sheet to draw instead of the cut-out (acting.js `sheet`): one drawing,
+  // one cel, left to right. Null while the act has no sheet, or when it's over.
+  sheetFrame(now) {
+    const sheet = this.act.sheet;
+    if (!sheet) return null;
+    const cel = this.sample(now);
+    if (!cel) return null;
+    return { ...sheet, frame: (sheet.from || 0) + cel.index * (sheet.step || 1) };
   }
 
   // Turn a drawing into plain fields: mirror it toward the act's direction (`facing` maps

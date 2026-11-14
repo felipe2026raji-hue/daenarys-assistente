@@ -84,11 +84,14 @@ test('the extra lines (spark, play, settings) reach every language', async () =>
     assert.equal(typeof text.spark.night?.length, 'number');
     assert.equal(typeof text.play.rpsAsk, 'string');
     // what she talks about on her own, and the little things around the mouse
-    for (const key of ['night', 'long', 'many', 'idle', 'memory', 'muse', 'morning', 'evening', 'silence', 'app']) {
+    for (const key of ['night', 'long', 'many', 'idle', 'memory', 'muse', 'morning', 'evening', 'silence', 'app', 'appLong', 'music', 'ask']) {
       assert.ok(Array.isArray(text.spark[key]) && text.spark[key].length, `${lang}.spark.${key}`);
     }
     assert.ok(text.spark.app.every((line) => line.includes('{app}')), `${lang}.spark.app needs {app}`);
+    assert.ok(text.spark.music.every((line) => line.includes('{app}')), `${lang}.spark.music needs {app}`);
+    for (const key of ['askTell', 'askLater']) assert.ok(text.spark[key]?.trim(), `${lang}.spark.${key}`);
     for (const key of ['startled', 'happy']) assert.ok(text.trick[key]?.length, `${lang}.trick.${key}`);
+    assert.ok(text.play.dodge?.length, `${lang}.play.dodge`);
     assert.ok(text.hint?.trim(), `${lang}.hint`);
   }
 });
