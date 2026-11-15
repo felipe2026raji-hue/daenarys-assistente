@@ -106,6 +106,7 @@ export class Capri {
     this.sy = 1;
     this.base = new Player('stand');
     this.act = null;
+    this.cometStar = null; // the light she's jumping for (fx.comet), while it's there
     this.lastDraw = 0;
 
     const now = performance.now();
@@ -894,6 +895,31 @@ export class Capri {
     return { shoulder: this.toScreen(sx, shoulder.y), hand: this.toScreen(hx, hy) };
   }
 
+  // A window opened on your PC: a light crosses the sky and she jumps for it, catches it at the
+  // top of the leap, and comes down with it (acting.js "comet"). Quick, and only when she's
+  // standing there with nothing else to do.
+  comet() {
+    if (reducedMotion.matches) return false;
+    if (this.busy || this.dragging || this.hidden || this.stowed || this.dormant) return false;
+    if (this.stance !== 'stand' || this.mode === 'sleep' || this.lounge || this.sky || this.act) return false;
+    const s = this.scale;
+    const dir = this.towardCenter();
+    const h = this.head();
+    // where her hand will be at the top of the jump: up and ahead of her
+    const aim = { x: h.x + dir * 60 * s, y: h.y - 150 * s };
+    // it comes in from the edge of the screen, high up, and gets there on the grab drawing
+    const from = { x: dir > 0 ? -80 : this.view.w + 80, y: Math.max(40, aim.y - 150 * s) };
+    const star = this.fx.comet(from, aim, { duration: 500, size: 1.25 });
+    this.cometStar = star;
+    this.voice.play('tick', { soft: true });
+    this.perform('comet', dir).then(() => {
+      if (this.cometStar !== star) return;
+      this.cometStar = null;
+      star.end();
+    });
+    return true;
+  }
+
   // The satellite. It crosses high over the open side of the screen, slowly, and her hand
   // follows it. Mostly she just looks at it ("gaze"). She sends the red light up to it
   // ("uplink") only when it means something: the first time of the day, and a little while
@@ -1093,6 +1119,17 @@ export class Capri {
         });
         this.voice.play('purr', { soft: true });
         break;
+      case 'grab': { // the light in her hand: it scatters there
+        const star = this.cometStar;
+        this.cometStar = null;
+        const at = star?.at() || { x: h.x + 20 * s, y: h.y - 60 * s };
+        star?.end();
+        this.fx.burst(at.x, at.y, { count: 10, power: 0.5, spread: 26 * s });
+        this.fx.ring(at.x, at.y, { size: 0.4 });
+        this.fx.lines(at.x, at.y, { inner: 46, life: 360 });
+        this.voice.play('star');
+        break;
+      }
       case 'sneeze': // dust off her, and a shiver
         this.fx.burst(h.x, h.y + 20 * s, { count: 10, power: 0.45, spread: 46 * s });
         this.voice.play('blip');

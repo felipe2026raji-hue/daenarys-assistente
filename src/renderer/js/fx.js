@@ -438,6 +438,18 @@ export class FxLayer {
     };
   }
 
+  // A shooting star, fast: a bright mote with a short tail crossing to `to` in `duration` ms.
+  // at(now) is where it is (she jumps for it); end() snuffs it out when a hand catches it.
+  comet(from, to, { duration = 500, size = 1 } = {}) {
+    const item = this.add({ type: 'comet', life: duration + 500, from, to, duration, size, endAt: 0 });
+    const at = (now = performance.now()) => {
+      const k = clamp((now - item.born) / duration, 0, 1);
+      return { x: lerp(from.x, to.x, k), y: lerp(from.y, to.y, k) };
+    };
+    item.at = at;
+    return { at, end: () => { item.endAt ||= performance.now(); } };
+  }
+
   // The red light going up: a heavy bolt from her hand to the satellite (ends() returns both).
   // Its head races up in three drawings, the first one in negative (an impact frame), then it
   // holds, struck fresh on every drawing with light running up it, until break(): it snaps and
@@ -1464,6 +1476,34 @@ export class FxLayer {
           ctx.fillStyle = COLORS.paper;
           ctx.fillRect(Math.round(x) - 1.5, Math.round(y) - 1.5, 3, 3);
         }
+        ctx.restore();
+        break;
+      }
+      case 'comet': {
+        const age = now - it.born;
+        if (it.endAt || age > it.duration) break;
+        const t = clamp(age / it.duration, 0, 1);
+        const { x, y } = it.at(now);
+        ctx.save();
+        // the tail: dots strung out behind it, smaller and fainter as they fall away
+        for (let k = 1; k <= 6; k++) {
+          const p = it.at(now - k * 30);
+          const r = Math.max(1, (7 - k) * 0.8 * it.size);
+          ctx.globalAlpha = (1 - k / 7) * 0.9;
+          ctx.fillStyle = k % 2 ? COLORS.violet : COLORS.paper;
+          ctx.fillRect(Math.round(p.x - r / 2), Math.round(p.y - r / 2), Math.round(r), Math.round(r));
+        }
+        ctx.globalAlpha = 1;
+        // the head: a four-point flare, shrinking as it comes in
+        const size = (13 - 5 * t) * it.size;
+        const ray = size * 2;
+        ctx.fillStyle = COLORS.violet;
+        ctx.fillRect(x - ray + 2, y - 1 + 2, ray * 2, 2);
+        ctx.fillRect(x - 1 + 2, y - ray + 2, 2, ray * 2);
+        ctx.fillStyle = COLORS.paper;
+        ctx.fillRect(x - ray, y - 1, ray * 2, 2);
+        ctx.fillRect(x - 1, y - ray, 2, ray * 2);
+        this.sparkle(x, y, size, COLORS.paper, COLORS.red);
         ctx.restore();
         break;
       }

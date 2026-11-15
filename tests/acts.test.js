@@ -23,7 +23,7 @@ const VISIBLE = new Set(['head', 'hair', 'tilt', 'bob', 'sx', 'sy', 'smear', 'ec
 
 test('her new gestures are whole acts, drawn with what the sprite can move', async () => {
   const { ACTS } = await actingModule();
-  for (const name of ['dance', 'bow', 'yawn', 'nod', 'swat', 'evade', 'giggle', 'ponder', 'sneeze']) {
+  for (const name of ['dance', 'bow', 'yawn', 'nod', 'swat', 'evade', 'giggle', 'ponder', 'sneeze', 'comet']) {
     const act = ACTS[name];
     assert.ok(act, `${name}: missing from ACTS`);
     assert.ok(Array.isArray(act.keys) && act.keys.length >= 4, `${name}: too few drawings`);
@@ -35,6 +35,20 @@ test('her new gestures are whole acts, drawn with what the sprite can move', asy
       }
     }
   }
+});
+
+test('the comet act catches its light on the drawing capri.js aims the comet at', async () => {
+  const { ACTS } = await actingModule();
+  const act = ACTS.comet;
+  let frames = 0;
+  let grabAt = -1;
+  for (const [hold, , cue] of act.keys) {
+    if (cue === 'grab') grabAt = frames;
+    frames += hold;
+  }
+  assert.ok(grabAt >= 0, 'comet: no "grab" cue');
+  // capri.js "comet()" sends the light in over 500 ms: the grab has to land right there
+  assert.equal(grabAt * (1000 / (act.fps || 12)), 500);
 });
 
 test('every act holds for a while, and a player samples it', async () => {

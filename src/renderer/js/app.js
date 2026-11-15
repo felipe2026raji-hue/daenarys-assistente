@@ -655,6 +655,25 @@ async function boot() {
   window.dev = { capri, brain, panel, chat, speech, guide, fx, voice, bond, jealousy, reminders, look, pc, play, spark, setup, settings, screens: () => screens };
 
   host.onClaudeEvent((evt) => brain.handle(evt));
+  // Her idea, the one she asked you about: a window opened, so a light crosses the sky and she
+  // jumps for it (acting.js "comet"). Not for every little thing — a menu or a tooltip is too
+  // small to count — and only when she's standing there with nothing else to do.
+  const knownWins = new Set();
+  let cometAt = 0;
+  const cometFor = (data) => {
+    const wins = (data?.wins || []).filter((w) => w.w * w.h >= 120 * 80);
+    const first = knownWins.size === 0;
+    let opened = 0;
+    for (const w of wins) if (!knownWins.has(w.id)) opened += 1;
+    knownWins.clear();
+    for (const w of wins) knownWins.add(w.id);
+    if (first || !opened) return; // the first look at your windows is not "a window opened"
+    if (config.pcReact === false || !quiet() || capri.stance !== 'stand') return;
+    const now = performance.now();
+    if (now < cometAt) return;
+    cometAt = now + 15000; // and not again right away
+    capri.comet();
+  };
   // You switched to another window: she turns her head that way now and then, when nothing else
   // is going on. Not while she's showing you something, or busy with an act of her own.
   let lastFg = 0;
@@ -679,6 +698,7 @@ async function boot() {
     jealousy.onWindows(data);
     pc.onWindows(data);
     spark.onWindows(data);
+    cometFor(data);
     glance(data);
   });
   // the windows as they are now: the watcher only speaks again when something changes

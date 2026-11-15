@@ -793,6 +793,28 @@ export const ACTS = {
       [1, {}],
     ],
   },
+
+  // A light crossing the sky (a window opened, capri.js "comet"): she crouches, leaps off her
+  // feet for it, catches it at the top of the jump — the whole drawing stretched up — and comes
+  // down with it, squashing on the floor. The grab lands on the 12th drawing (500 ms in).
+  comet: {
+    priority: 2,
+    fps: 24,
+    directional: true,
+    keys: [
+      [2, { head: -0.3, bob: 2, sy: 0.97, sx: 1.03 }],
+      [3, { head: -0.5, bob: 5, sy: 0.9, sx: 1.08, hair: 4 }],
+      [1, { head: -0.6, bob: 6, sy: 0.88, sx: 1.1, hair: 5 }],
+      [2, { head: 0.6, bob: -26, sy: 1.08, sx: 0.94, hair: -6, smear: [0, -10] }],
+      [4, { head: 1.0, bob: -54, tilt: -4, sy: 1.04, sx: 0.97, hair: -3 }],
+      [3, { head: 1.25, bob: -64, tilt: -6, hair: -2, smear: [0, -6] }, 'grab'],
+      [2, { head: 0.7, bob: -60, tilt: 4, hair: 3, sy: 0.98, sx: 1.02 }],
+      [2, { head: 0.2, bob: -16, sy: 1.05, sx: 0.96, hair: 1, smear: [0, 7] }],
+      [1, { head: 0, bob: 3, sy: 0.86, sx: 1.12 }],
+      [2, { head: 0.1, bob: -1, sy: 1.02, sx: 0.98 }],
+      [1, {}],
+    ],
+  },
 };
 
 export class Player {
